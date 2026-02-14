@@ -2,6 +2,8 @@
 
 ![Version](https://img.shields.io/github/v/tag/Aiyyskhan/neurokitties-2d?label=version&style=flat-square)
 ![License](https://img.shields.io/github/license/Aiyyskhan/neurokitties-2d?label=license&style=flat-square)
+![Solana](https://img.shields.io/badge/blockchain-Solana-9945FF?logo=solana&logoColor=white&style=flat-square)
+
 
 <h2>
 🐱 Evolve your NeuroKitties and preserve them as NFTs!
