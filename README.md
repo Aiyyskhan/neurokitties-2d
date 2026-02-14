@@ -1,7 +1,7 @@
 <h1> NeuroKitties 2D </h1>
 
-![Version](https://img.shields.io/github/v/tag/Aiyyskhan/neurokitties-2d)
-![License](https://img.shields.io/github/license/Aiyyskhan/neurokitties-2d)
+![Version](https://img.shields.io/github/v/tag/Aiyyskhan/neurokitties-2d?label=version&style=flat-square)
+![License](https://img.shields.io/github/license/Aiyyskhan/neurokitties-2d?label=license&style=flat-square)
 
 <h2>
 🐱 Evolve your NeuroKitties and preserve them as NFTs!
