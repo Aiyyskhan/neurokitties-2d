@@ -67,18 +67,13 @@ const NFTmint: FC<NFTmintType> = ({ ref }) => {
     const kitty_attributes: MetadataAttributesType[] = [
         { trait_type: "game", value: "NeuroKitties" }, 
         { trait_type: "version", value:  config.GAME_VERSION },
-        { trait_type: "genome", value: JSON.stringify({
-            COLORS: kitty_genome.COLORS,
-            BRAIN: kitty_genome.BRAIN,
-            // BRAIN_MASK: genome.MUTATION_MASK,
-        }) },
-    ]
+    ];
 
-    const kitty_properties = {}; //: GenomeType = {
-    //     COLORS: genome.COLORS,
-    //     BRAIN: genome.BRAIN,
-    //     BRAIN_MASK: genome.BRAIN_MASK,
-    // };
+    const kitty_extensions = JSON.stringify({
+        COLORS: kitty_genome.COLORS,
+        BRAIN: kitty_genome.BRAIN,
+        // BRAIN_MASK: genome.MUTATION_MASK,
+    });
 
     const minting = async() => {
         if(kittyAvatarSnapshot.current?.snapshotBase64) {
@@ -92,7 +87,14 @@ const NFTmint: FC<NFTmintType> = ({ ref }) => {
                     description: fullDescription,
                     attributes: kitty_attributes,
                 }
-                await createNFT(wallet, solanaEndpoint, network, kittyAvatarSnapshot.current.snapshotBase64, partMetadata, kitty_properties);                
+                await createNFT(
+                    wallet, 
+                    solanaEndpoint, 
+                    network, 
+                    kittyAvatarSnapshot.current.snapshotBase64, 
+                    partMetadata,
+                    kitty_extensions
+                );                
             } else {
                 throw new Error('Failed to connect to wallet');
             }

@@ -32,7 +32,7 @@ export const GameData = {
 export const SOLANA = {
     MAINNET: 'https://api.mainnet-beta.solana.com',
     DEVNET: 'https://api.devnet.solana.com',
-    EXPLORER: 'https://explorer.solana.com', //'https://explorer.solana.com' //'https://explorer.solana.com/?cluster=devnet'
+    EXPLORER: 'https://translator.shyft.to', //'https://explorer.solana.com',
     IRYS: 'https://gateway.irys.xyz',
 }
 

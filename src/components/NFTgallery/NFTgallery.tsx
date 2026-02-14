@@ -42,8 +42,9 @@ const NFTgallery: React.FC = () => {
         // console.log(`Attr: ${nft.attributes}`);
         // console.log(`Prop: ${nft.properties}`);
 
-        const genomeTrait = nft.attributes.find(trait => trait.trait_type === "genome");
-        const genomeStr = genomeTrait?.value;
+        // const genomeTrait = nft.attributes.find(trait => trait.trait_type === "genome");
+        // const genomeStr = genomeTrait?.value;
+        const genomeStr = nft.extensions;
         // console.log(`Genome str: ${genomeStr}`);
         
         if (genomeStr) {

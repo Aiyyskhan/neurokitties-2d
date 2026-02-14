@@ -8,7 +8,6 @@ import { base58 } from "@metaplex-foundation/umi/serializers";
 import { WebUploader } from "@irys/web-upload";
 import { WebSolana } from "@irys/web-upload-solana";
 import BaseWebIrys from '@irys/web-upload/esm/base';
-import type { GenomeType } from "@/types/game";
 import { SolanaCluster } from './types';
 import * as config from '@/config';
 
@@ -27,8 +26,8 @@ export interface PartialMetadata {
 
 export interface FullMetadata extends PartialMetadata {
     image: string;
-    // Store genome or arbitrary properties from metadata
-    properties: GenomeType | Record<string, unknown>;
+    properties: Record<string, unknown>;
+    extensions: string;
 }
 
 // Для ссылок в explorer (если ты используешь ?cluster=devnet)
@@ -69,8 +68,8 @@ export async function createNFT(
     solanaEndpoint: string, 
     cluster: SolanaCluster,
     base64Image: string, 
-    partMetadata: PartialMetadata, 
-    genome_data: GenomeType | Record<string, unknown>
+    partMetadata: PartialMetadata,
+    extensions: string
 ) {
 
     const umi = await initUmi(wallet.wallet, solanaEndpoint);
@@ -80,7 +79,17 @@ export async function createNFT(
         console.log(`Connected to Irys from ${irysUploader.address}`);
 
         const imageUri = await uploadImage(irysUploader, base64Image, partMetadata.name);
-        const metadata: FullMetadata = { ...partMetadata, image: imageUri, properties: genome_data };
+
+        const properties = {
+            files: [{ uri: imageUri, type: "image/png" }],
+            category: "image",
+        }
+        const metadata: FullMetadata = { 
+            ...partMetadata, 
+            image: imageUri, 
+            properties: properties, 
+            extensions: extensions 
+        };
         const metadataUri = await uploadMetadata(irysUploader, metadata);
 
         await mint(umi, metadataUri, metadata.name, metadata.symbol, cluster);
@@ -216,7 +225,8 @@ export async function getNFTs(
                             symbol: metadata.symbol || "",
                             description: metadata.description || "No description available",
                             attributes: metadata.attributes || [],
-                            properties: {},
+                            properties: metadata.properties || {},
+                            extensions: metadata.extensions,
                             image: metadata.image,
                         };
                     }
