@@ -63,22 +63,30 @@ async function initUmi(wallet: Wallet | null, solanaEndpoint: string): Promise<U
     return umi;
 }
 
+type ProgressReporter = (message: string) => void;
+
 export async function createNFT(
     wallet: WalletContextState,
     solanaEndpoint: string, 
     cluster: SolanaCluster,
     base64Image: string, 
     partMetadata: PartialMetadata,
-    extensions: string
+    extensions: string,
+    onProgress?: ProgressReporter
 ) {
+
+    const report = (message: string) => {
+        onProgress?.(message);
+        console.log(message);
+    };
 
     const umi = await initUmi(wallet.wallet, solanaEndpoint);
 
     try {
         const irysUploader = await getIrysUploader(wallet, cluster, solanaEndpoint);
-        console.log(`Connected to Irys from ${irysUploader.address}`);
+        report(`Connected to Irys from ${irysUploader.address}`);
 
-        const imageUri = await uploadImage(irysUploader, base64Image, partMetadata.name);
+        const imageUri = await uploadImage(irysUploader, base64Image, partMetadata.name, report);
 
         const properties = {
             files: [{ uri: imageUri, type: "image/png" }],
@@ -90,16 +98,24 @@ export async function createNFT(
             properties: properties, 
             extensions: extensions 
         };
-        const metadataUri = await uploadMetadata(irysUploader, metadata);
+        const metadataUri = await uploadMetadata(irysUploader, metadata, report);
 
-        await mint(umi, metadataUri, metadata.name, metadata.symbol, cluster);
+        await mint(umi, metadataUri, metadata.name, metadata.symbol, cluster, report);
     } catch (error) {
-        console.log("Error connecting to Irys");
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        report(`Error: ${errorMessage}`);
+        throw error;
     }
 }
 
-async function uploadImage(irysUploader: BaseWebIrys, base64Image: string, kitty_name: string): Promise<string> {
+async function uploadImage(
+    irysUploader: BaseWebIrys,
+    base64Image: string,
+    kitty_name: string,
+    report: ProgressReporter
+): Promise<string> {
     try {
+        report('Uploading image...');
         // Support environments with and without Node Buffer (browser)
         const base64Data = base64Image.includes(',') ? base64Image.split(',')[1] : base64Image;
         let imageBytes: Uint8Array;
@@ -120,14 +136,16 @@ async function uploadImage(irysUploader: BaseWebIrys, base64Image: string, kitty
         const imageFile = new File([safeBytes], `${kitty_name}.png`, { type: 'image/png' });
         const size = imageFile.size;
         const price = await irysUploader.getPrice(size);
-        console.log(`Uploading ${size} bytes costs ${irysUploader.utils.fromAtomic(price)}`); // ${token}`);
+        report(`Uploading ${size} bytes costs ${irysUploader.utils.fromAtomic(price)} SOL`);
+        report('Please wait...');
+
         await irysUploader.fund(price);
 
         const response = await irysUploader.uploadFile(imageFile);
 
         const imageUri = `${config.SOLANA.IRYS}/${response.id}`;
 
-        console.log(`Image uploaded, URI: ${imageUri}`);
+        report(`Image uploaded, URI: ${imageUri}`);
         return imageUri;
     } catch (err) {
         if (err instanceof Error) throw err;
@@ -135,9 +153,13 @@ async function uploadImage(irysUploader: BaseWebIrys, base64Image: string, kitty
     }
 }
 
-async function uploadMetadata(irysUploader: BaseWebIrys, metadata: FullMetadata, ): Promise<string> {
+async function uploadMetadata(
+    irysUploader: BaseWebIrys,
+    metadata: FullMetadata,
+    report: ProgressReporter
+): Promise<string> {
     try {
-        console.log('Uploading metadata...');
+        report('Uploading metadata...');
 
         const json = JSON.stringify(metadata);
         const bytes = new TextEncoder().encode(json); // UTF-8 bytes
@@ -146,14 +168,16 @@ async function uploadMetadata(irysUploader: BaseWebIrys, metadata: FullMetadata,
         const tags = [{ name: "Content-Type", value: "application/json" }];
 
         const price = await irysUploader.getPrice(size);
-        console.log(`Uploading ${size} bytes costs ${irysUploader.utils.fromAtomic(price)}`); // ${token}`);
+        report(`Uploading ${size} bytes costs ${irysUploader.utils.fromAtomic(price)} SOL`);
+        report('Please wait...');
+        
         await irysUploader.fund(price);
 
         const response = await irysUploader.upload(json, { tags });
 
         const metadataUri = `${config.SOLANA.IRYS}/${response.id}`;
 
-        console.log(`Metadata uploaded, URI: ${metadataUri}`);
+        report(`Metadata uploaded, URI: ${metadataUri}`);
         return metadataUri;     
     } catch (err) {
         if (err instanceof Error) throw err;
@@ -166,7 +190,8 @@ async function mint(
     metadataUri: string, 
     kitty_name: string, 
     kitty_symbol: string,
-    cluster: SolanaCluster
+    cluster: SolanaCluster,
+    report: ProgressReporter
 ) {
     try {
         const nftSigner = generateSigner(umi);
@@ -182,12 +207,13 @@ async function mint(
         const signature = base58.deserialize(tx.signature)[0];
         const clusterParam = explorerClusterParam[cluster];
 
-        console.log("\nNFT Created")
-        console.log("View Transaction on Solana Explorer");
-        console.log(`${config.SOLANA.EXPLORER}/tx/${signature}?cluster=${clusterParam}`);
-        console.log("\n");
-        console.log("View NFT on Metaplex Explorer");
-        console.log(`${config.SOLANA.EXPLORER}/address/${nftSigner.publicKey}?cluster=${clusterParam}`);
+        report("");
+        report("NFT Created");
+        report("View Transaction on Solana Explorer");
+        report(`${config.SOLANA.EXPLORER}/tx/${signature}?cluster=${clusterParam}`);
+        report("");
+        report("View NFT on Metaplex Explorer");
+        report(`${config.SOLANA.EXPLORER}/address/${nftSigner.publicKey}?cluster=${clusterParam}`);
     } catch (err) {
         if (err instanceof Error) throw err;
         throw new Error(String(err));

@@ -140,4 +140,113 @@
             @extend %btn-styles;
         }
     }
+
+    .mint-progress {
+        @include flex-center($ai: stretch);
+        width: 100%;
+        height: 100%;
+        flex-direction: column;
+        gap: 0.75rem;
+        padding: 0.5rem;
+    }
+
+    .mint-progress-title {
+        @include flex-center;
+        gap: 0.5rem;
+        font-size: 1.5rem;
+        letter-spacing: 0.5px;
+    }
+
+    .mint-progress-body {
+        flex: 1;
+        width: 100%;
+        border: $border-lw solid $color3;
+        padding: 0.6rem;
+        background-color: $color1;
+        color: $color3;
+        overflow: auto;
+        font-family: inherit;
+        font-size: 1.5rem;
+        line-height: 1.4;
+        scrollbar-color: $color3 $color1;
+    }
+
+    .mint-progress-line {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        word-break: break-word;
+        white-space: pre-wrap;
+    }
+
+    .mint-progress-icon {
+        width: 1.5rem;
+        flex: 0 0 1.2rem;
+        text-align: center;
+        line-height: 1.2rem;
+        opacity: 0.9;
+    }
+
+    .mint-progress-icon--success {
+        color: $color3;
+    }
+
+    .mint-progress-icon--error {
+        color: $color_danger;
+    }
+
+    .mint-progress-link {
+        color: $color3;
+        text-decoration: underline;
+        word-break: break-all;
+    }
+
+    .mint-progress-dots {
+        display: inline-flex;
+        gap: 0.1rem;
+        align-items: center;
+        height: 1.2rem;
+    }
+
+    .mint-progress-dots span {
+        animation: mintDots 1.2s infinite;
+        opacity: 0.2;
+        font-weight: bold;
+    }
+
+    .mint-progress-dots span:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+
+    .mint-progress-dots span:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+
+    .mint-progress-status {
+        font-size: 1.7rem;
+        line-height: 1;
+    }
+
+    .mint-progress-status--success {
+        color: $color3;
+    }
+
+    .mint-progress-status--error {
+        color: $color_danger;
+    }
+}
+
+@keyframes mintDots {
+    0%, 20% {
+        opacity: 0.0;
+        transform: translateY(0);
+    }
+    50% {
+        opacity: 1;
+        transform: translateY(-2px);
+    }
+    80%, 100% {
+        opacity: 0.0;
+        transform: translateY(0);
+    }
 }

@@ -1,18 +1,19 @@
-import { FC, useEffect, useRef } from "react";
+import { FC, useEffect, useMemo, useRef, useState } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { useSolanaNetwork } from "@/context/SolanaNetworkContext";
 import { createNFT, MetadataAttributesType, PartialMetadata } from "@/solana/nftManager";
 import { KittyAvatar, RefKittyAvatar } from "@/components/KittyAvatar";
 import { NetworkSelect } from "@/components/NetworkSelect";
 import { SoundButton } from "@/components/SoundButton";
-import type { KittyExportData } from "@/types/game";
+import Modal from "@/components/Modal/Modal";
+import type { KittyData } from "@/types/game";
 import * as config from '@/config';
 
 import styles from "./NFTmint.module.scss";
 
 
 interface NFTmintType {
-    ref: React.RefObject<KittyExportData | null>;
+    ref: React.RefObject<KittyData | null>;
 }
 
 const NFTmint: FC<NFTmintType> = ({ ref }) => {
@@ -23,6 +24,11 @@ const NFTmint: FC<NFTmintType> = ({ ref }) => {
     const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
     const kittyAvatarSnapshot = useRef<RefKittyAvatar | null>(null);
+
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isMinting, setIsMinting] = useState(false);
+    const [progressLines, setProgressLines] = useState<string[]>([]);
+    const [mintStatus, setMintStatus] = useState<"idle" | "success" | "error">("idle");
     
     useEffect(() => {
         // логика деблокировки клавиши "пробел" со стороны Phaser.js
@@ -47,6 +53,7 @@ const NFTmint: FC<NFTmintType> = ({ ref }) => {
             textarea?.removeEventListener("blur", handleBlur);
         };
     }, []);
+
 
     const kitty_id = ref.current!.kitty_id;
     const kitty_generation = ref.current!.generation;
@@ -75,32 +82,102 @@ const NFTmint: FC<NFTmintType> = ({ ref }) => {
         // BRAIN_MASK: genome.MUTATION_MASK,
     });
 
-    const minting = async() => {
-        if(kittyAvatarSnapshot.current?.snapshotBase64) {
-            if (wallet) { // && connected) {
-                const solanaEndpoint = endpoint || connection.rpcEndpoint;
+    const addProgress = (line: string) => {
+        setProgressLines((prev) => [...prev, line]);
+    };
 
-                const fullDescription = `Progress: ${kitty_progress}\nGeneration: ${kitty_generation}\nDescription:\n${textareaRef.current?.value as string}`
-                const partMetadata: PartialMetadata = {
-                    name: kitty_name,
-                    symbol: kitty_symbol,
-                    description: fullDescription,
-                    attributes: kitty_attributes,
-                }
-                await createNFT(
-                    wallet, 
-                    solanaEndpoint, 
-                    network, 
-                    kittyAvatarSnapshot.current.snapshotBase64, 
-                    partMetadata,
-                    kitty_extensions
-                );                
-            } else {
-                throw new Error('Failed to connect to wallet');
+    const getLineStatus = (line: string): "success" | "error" | null => {
+        const lower = line.toLowerCase();
+        if (lower.startsWith("error") || lower.includes("failed") || lower.includes("problems")) {
+            return "error";
+        }
+        if (lower.includes("uploaded") || lower.includes("nft created")) {
+            return "success";
+        }
+        return null;
+    };
+
+    const progressContent = useMemo(() => {
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        return progressLines.map((line, lineIndex) => {
+            if (!line) {
+                return <div key={`line-${lineIndex}`} className={styles["mint-progress-line"]}>&nbsp;</div>;
             }
-        } else {
-            throw new Error('Problems with snapshotBase64');
-        };
+            const parts = line.split(urlRegex);
+            const lineStatus = getLineStatus(line);
+            return (
+                <div key={`line-${lineIndex}`} className={styles["mint-progress-line"]}>
+                    <span
+                        className={`${styles["mint-progress-icon"]} ${
+                            lineStatus ? styles[`mint-progress-icon--${lineStatus}`] : ""
+                        }`}
+                        aria-hidden="true"
+                    >
+                        {lineStatus === "success" ? "✔" : lineStatus === "error" ? "✖" : ""}
+                    </span>
+                    {parts.map((part, partIndex) => {
+                        if (part.startsWith("http://") || part.startsWith("https://")) {
+                            return (
+                                <a
+                                    key={`part-${lineIndex}-${partIndex}`}
+                                    href={part}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className={styles["mint-progress-link"]}
+                                >
+                                    {part}
+                                </a>
+                            );
+                        }
+                        return <span key={`part-${lineIndex}-${partIndex}`}>{part}</span>;
+                    })}
+                </div>
+            );
+        });
+    }, [progressLines]);
+
+    const minting = async() => {
+        setIsModalOpen(true);
+        setProgressLines([]);
+        setIsMinting(true);
+        setMintStatus("idle");
+        try {
+            if(kittyAvatarSnapshot.current?.snapshotBase64) {
+                if (wallet) { // && connected) {
+                    const solanaEndpoint = endpoint || connection.rpcEndpoint;
+
+                    const fullDescription = `Progress: ${kitty_progress}\nGeneration: ${kitty_generation}\nDescription:\n${textareaRef.current?.value as string}`
+                    const partMetadata: PartialMetadata = {
+                        name: kitty_name,
+                        symbol: kitty_symbol,
+                        description: fullDescription,
+                        attributes: kitty_attributes,
+                    }
+                    await createNFT(
+                        wallet, 
+                        solanaEndpoint, 
+                        network, 
+                        kittyAvatarSnapshot.current.snapshotBase64, 
+                        partMetadata,
+                        kitty_extensions,
+                        addProgress
+                    );                
+                    setMintStatus("success");
+                } else {
+                    addProgress("Failed to connect to wallet");
+                    throw new Error('Failed to connect to wallet');
+                }
+            } else {
+                addProgress("Problems with snapshotBase64");
+                throw new Error('Problems with snapshotBase64');
+            }
+        } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            addProgress(`Error: ${message}`);
+            setMintStatus("error");
+        } finally {
+            setIsMinting(false);
+        }
     }
 
     return (
@@ -139,8 +216,33 @@ const NFTmint: FC<NFTmintType> = ({ ref }) => {
                     />
                 </div>
                 <div className={styles["nft-button"]}>
-                    <SoundButton className={styles["mint"]} onClick={minting}>MINT</SoundButton>
+                    <SoundButton className={styles["mint"]} onClick={minting} disabled={isMinting}>MINT</SoundButton>
                 </div>
+                {isModalOpen && (
+                    <Modal onExit={isMinting ? undefined : () => setIsModalOpen(false)}>
+                        <div className={styles["mint-progress"]}>
+                            <div className={styles["mint-progress-title"]}>
+                                <span>Mint progress</span>
+                                {isMinting && (
+                                    <span className={styles["mint-progress-dots"]} aria-hidden="true">
+                                        <span>.</span>
+                                        <span>.</span>
+                                        <span>.</span>
+                                    </span>
+                                )}
+                                {!isMinting && mintStatus === "success" && (
+                                    <span className={`${styles["mint-progress-status"]} ${styles["mint-progress-status--success"]}`} aria-hidden="true">✔</span>
+                                )}
+                                {!isMinting && mintStatus === "error" && (
+                                    <span className={`${styles["mint-progress-status"]} ${styles["mint-progress-status--error"]}`} aria-hidden="true">✖</span>
+                                )}
+                            </div>
+                            <div className={styles["mint-progress-body"]}>
+                                {progressLines.length === 0 ? "Waiting for updates..." : progressContent}
+                            </div>
+                        </div>
+                    </Modal>
+                )}
             </>
         </div>
     )

@@ -9,7 +9,7 @@ export type GenomeType = {
     // BRAIN_MASK: number[][][];
 };
 
-export interface KittyExportData {
+export interface KittyData {
     kitty_id: number;
     generation: number;
     progress: number;

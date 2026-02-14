@@ -13,7 +13,7 @@ import { ExitPanel } from "@/components/ExitPanel";
 import { Tooltip } from "@/components/Tooltip";
 import { clearPopulation, POPULATION_GENOME } from "@/neuroevolution/genomes";
 import GameScene from "@/scenes/Game";
-import type { SelectedKitty, KittyExportData } from "@/types/game";
+import type { SelectedKitty, KittyData } from "@/types/game";
 import * as config from '@/config';
 
 import styles from './HUD.module.scss';
@@ -47,7 +47,7 @@ const HUD: React.FC<HUDProps> = ({ ref }) => {
         brainTransferProb: config.BRAIN_TRANSFER_PROB,
         brainFraction: config.BRAIN_FRACTION,
     });
-    const mintKittyData = useRef<KittyExportData | null>(null);
+    const mintKittyData = useRef<KittyData | null>(null);
 
     useLayoutEffect(() => {
         if (ref.current) {
