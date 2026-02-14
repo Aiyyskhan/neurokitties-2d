@@ -1,0 +1,55 @@
+@use "@/assets/styles/global.scss" as *;
+
+.tooltip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+
+  --tooltip-top: auto;
+  --tooltip-bottom: auto;
+  --tooltip-left: auto;
+  --tooltip-right: auto;
+}
+
+.tooltip__trigger {
+  outline: none;
+//   cursor: help;
+}
+
+.tooltip__bubble {
+  position: absolute;
+  z-index: 9999;
+
+  width: max-content;
+  max-width: 320px;
+  min-width: 180px;
+  white-space: normal;
+  padding: 8px 10px;
+
+  background: $color2;
+  color: $color3;
+  border: 1px solid $color3;
+  border-radius: 8px;
+
+  font-size: 1.5rem;
+  line-height: 1.3;
+  white-space: normal;
+
+  top: var(--tooltip-top);
+  bottom: var(--tooltip-bottom);
+  left: var(--tooltip-left);
+  right: var(--tooltip-right);
+
+  opacity: 0;
+  transform: translateY(4px);
+  pointer-events: none;
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+/* показываем на hover и на focus (важно для клавиатуры) */
+// .tooltip:hover .tooltip__bubble,
+// .tooltip:focus-within .tooltip__bubble {
+.tooltip:hover .tooltip__bubble {
+  opacity: 1;
+  transform: translateY(0);
+}

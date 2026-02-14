@@ -1,0 +1,95 @@
+@use "@/assets/styles/global.scss" as *;
+
+.select {
+  display: grid;
+  gap: 1.5rem;
+
+  width: 100%;
+
+  color: $color3;
+  font-family: inherit;
+}
+
+/* class applied to inner Select component to make it expand */
+.inner-select {
+  width: 100%;
+  min-width: 400px; /* prefer wider default, can be overridden by parent */
+  // display: block;
+}
+
+.select__label {
+  font-size: 1rem;
+  font-family: inherit;
+  letter-spacing: 0.4px;
+  // text-transform: uppercase;
+}
+
+/* подпись как у segmented версии */
+.select__hint {
+  font-size: 1.5rem;
+  font-family: inherit;
+  padding: 6px 10px;
+  background: $color2;
+  border: $border-lw solid $color3;
+  border-radius: 0; //$border-r;
+  color: $color3;
+}
+
+.select__hint[data-risk="high"] {
+  border-color: $color_caution;
+  color: $color_caution;
+}
+
+.network-endpoint {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+
+  label {
+    font-size: 1.5rem;
+    font-family: inherit;
+    letter-spacing: 0.4px;
+  }
+}
+
+.network-endpoint-input {
+  -webkit-appearance: none;
+  appearance: none;
+  background: $color1;
+  border: $border-lw solid $color3;
+  padding: 6px 8px;
+  font-size: 1.5rem;
+  font-family: inherit;
+  color: $color3;
+
+  outline: none;
+  box-shadow: none;
+
+  &:focus {
+    outline: none;
+    box-shadow: none !important;
+    border-color: $color3;
+    background: $color1;
+  }
+
+  /* Autofill (Chrome) */
+  &:-webkit-autofill,
+  &:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0px 1000px $color1 inset;
+    box-shadow: 0 0 0px 1000px $color1 inset;
+    -webkit-text-fill-color: $color3 !important;
+  }
+}
+
+/* Try to hide various built-in decorations across browsers */
+.network-endpoint-input::-webkit-search-decoration,
+.network-endpoint-input::-webkit-search-cancel-button,
+.network-endpoint-input::-webkit-search-results-button,
+.network-endpoint-input::-webkit-search-results-decoration,
+.network-endpoint-input::-webkit-clear-button,
+.network-endpoint-input::-webkit-outer-spin-button,
+.network-endpoint-input::-webkit-inner-spin-button,
+.network-endpoint-input::-webkit-calendar-picker-indicator {
+  display: none !important;
+}

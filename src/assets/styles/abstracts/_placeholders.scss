@@ -1,0 +1,57 @@
+@use "./variables" as *;
+@use "./mixins" as *;
+
+%panel-styles {
+    background-color: rgba($color2, 0.9);
+    color: $color3;
+}
+
+%modal-styles {
+    background-color: $color2; //rgba($color2, 0.9);
+    border-radius: 0;
+    border: $color3 $border-lw solid;
+    box-shadow: 0 4px 10px rgba($color3, 0.5);
+}
+
+%info-items-styles {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+%wallet-adapter-texts-styles {
+    font-family: "VT323", monospace;
+    font-weight: normal;
+    font-style: normal;
+    color: $color3;
+}
+
+%btn-styles {
+    @include flex-center;
+    // height: 3rem;
+    height: calc($hud-height * 0.38);
+    min-height: 2rem;
+    line-height: 3rem;
+    background-color: $color3;
+    color: $color2;
+    border: none;
+    border-radius: $border-r;
+    cursor: pointer;
+    // cursor: url("/assets/ui/hand_small_point.png") 8 8, pointer !important;
+    padding: $btn-paddingY $btn-paddingX;
+    font-family: inherit;
+    font-size: 1.3rem; //20px;
+    font-weight: normal;
+    transition: transform 0.1s ease;
+  
+    &:active {
+        transform: scale(0.95);
+    }
+
+    &:hover {
+        background-color: $color3 !important;
+        color: $color0;
+        // cursor: url("../../icons/hand_small_point.png") 8 8, pointer;
+    }
+}

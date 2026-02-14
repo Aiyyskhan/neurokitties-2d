@@ -1,0 +1,146 @@
+@use "@/assets/styles/global.scss" as *;
+
+.app {
+  @include flex-center;
+  flex-direction: column; // Располагаем HUD и game-container вертикально
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: visible;
+
+  .musicToggle {
+    @extend %btn-styles;
+    
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 1000;
+
+    width: 44px;
+    height: 44px;
+    padding: 0;
+
+    outline: none;
+
+    .musicIcon {
+      width: 34px;
+      height: 34px;
+
+      background-color: $color2;
+
+      mask-repeat: no-repeat;
+      mask-position: center;
+      mask-size: contain;
+
+      -webkit-mask-repeat: no-repeat;
+      -webkit-mask-position: center;
+      -webkit-mask-size: contain;
+
+      &:hover {
+        background-color: $color0;
+      }
+    }
+  }
+}
+
+// .logo {
+//   height: 6em;
+//   padding: 1.5em;
+//   will-change: filter;
+//   transition: filter 300ms;
+
+//   &:hover {
+//     filter: drop-shadow(0 0 2em #646cffaa);
+//   }
+
+//   &.react:hover {
+//     filter: drop-shadow(0 0 2em #61dafbaa);
+//   }
+// }
+
+// @keyframes logo-spin {
+//   from {
+//     transform: rotate(0deg);
+//   }
+//   to {
+//     transform: rotate(360deg);
+//   }
+// }
+
+// @media (prefers-reduced-motion: no-preference) {
+//   a:nth-of-type(2) .logo {
+//     animation: logo-spin infinite 20s linear;
+//   }
+// }
+
+// .card {
+//   padding: 2em;
+// }
+
+// .read-the-docs {
+//   color: #888;
+// }
+
+// .spritePosition {
+//   margin: 10px 0 0 10px;
+//   font-size: 0.8em;
+// }
+
+// .button {
+//   width: 140px;
+//   margin: 10px;
+//   padding: 10px;
+//   background-color: #000000;
+//   color: rgba(255, 255, 255, 0.87);
+//   border: 1px solid rgba(255, 255, 255, 0.87);
+//   cursor: pointer;
+//   transition: all 0.3s;
+
+//   &:hover {
+//       border: 1px solid #0ec3c9;
+//       color: #0ec3c9;
+//   }
+
+//   &:active {
+//       background-color: #0ec3c9;
+//   }
+
+//   /* Disabled styles */
+//   &:disabled {
+//       cursor: not-allowed;
+//       border: 1px solid rgba(255, 255, 255, 0.3);
+//       color: rgba(255, 255, 255, 0.3);
+//   }
+// }
+
+// .menu {
+//     // position: absolute;
+//     top: 50%;
+//     left: 50%;
+//     transform: translate(-50%, -50%);
+//     display: flex;
+//     flex-direction: column;
+//     gap: 10px;
+//     background: rgba(0, 0, 0, 0.8);
+//     padding: 20px;
+//     border-radius: 10px;
+  
+//     button {
+//         background-color: #849e0e;
+//         color: white;
+//         padding: 10px;
+//         border: none;
+//         cursor: pointer;
+//         font-size: 18px;
+//     }
+// }
+
+// .menu button {
+//   background-color: #849e0e;
+//   color: white;
+//   padding: 10px;
+//   border: none;
+//   cursor: pointer;
+//   font-size: 18px;
+// }
+

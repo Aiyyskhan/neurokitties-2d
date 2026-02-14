@@ -1,0 +1,36 @@
+@use "@/assets/styles/global.scss" as *;
+
+.login-panel {
+    @include flex-center;
+    flex-direction: column;
+    gap: 2rem;
+    // background-color: rgba($color: #ff0000, $alpha: 1.0);
+    background-color: $color1;
+    width: 100%;
+    height: 100%;
+
+    h1 {
+        // background-color: rgba($color: #000000, $alpha: 0.0);
+        font-size: 3rem;
+        font-weight: 100;
+    }
+
+    &__btns {
+        @include flex-center;
+        flex-direction: column;
+        min-width: 200px;
+        gap: 1rem;
+    }
+
+    &__btn {
+        display: inline-block;
+        position: relative;
+        width: 100%;
+        // height: 5rem;
+
+        button {
+            @extend %btn-styles;
+            width: 100%;
+        }
+    }
+}

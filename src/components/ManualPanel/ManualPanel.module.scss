@@ -1,0 +1,54 @@
+@use "@/assets/styles/global.scss" as *;
+
+$margin: 2rem;
+
+.manualPanel {
+    max-width: 100%;
+    overflow-y: auto;
+
+    scrollbar-color: $color3 transparent;
+    
+    &__title {
+        margin: $margin;
+        text-align: center;
+        font-size: 2rem;
+        color: $color3;
+    }
+
+    &__description {
+        margin: $margin;
+        line-height: 1.6;
+        font-size: 1.5rem;
+        color: $color3;
+    }
+
+    &__list {
+        margin: $margin;
+        padding-left: 1rem;
+        // list-style: decimal outside;
+        list-style: disc outside;
+        font-size: 1.5rem;
+        color: $color3;
+
+        li {
+            margin-bottom: 0.5rem;
+            line-height: 1.6;
+        
+            &::marker {
+                color: $color3;
+                font-size: 1.2rem;
+            }
+
+            ol, ul {
+                padding-left: 2rem;
+            }
+        }
+    }
+
+    &__end {
+        margin: $margin;
+        text-align: center;
+        font-size: 2rem;
+        color: $color3;
+    }
+}

@@ -1,0 +1,119 @@
+@use "@/assets/styles/global.scss" as *;
+
+.select {
+  position: relative;
+//   display: inline-block;
+  display: grid;
+  grid-auto-flow: column;
+  column-gap: 12px;
+  min-width: 240px;
+}
+
+.select__label {
+  display: flex;
+  align-items: center;
+  font-size: 1.5rem;
+  font-family: inherit;
+  opacity: 0.85;
+}
+
+.select__button {
+  width: 100%;
+  height: 36px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 10px;
+  border-radius: 0; //$border-r;
+  border: none; //$border-lw solid $color3;
+  background: $color1;
+
+  font-family: inherit;
+  font-size: 1.5rem;
+  color: $color3;
+
+  cursor: pointer;
+  user-select: none;
+
+  &:focus {
+    outline: none;
+    // box-shadow: 0 0 0 3px rgba(60, 120, 255, 0.25);
+    // border-color: rgba(60, 120, 255, 0.55);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.select__value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-right: 10px;
+}
+
+.select__chevron {
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid $color3;
+}
+
+.select__list {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 100%;
+
+  margin: 0;
+  padding: 6px 0;
+  list-style: none;
+
+  border: $border-lw solid $color3;
+  border-radius: 0; //$border-r;
+  background: $color2; //$color1;
+  box-shadow: 0 4px 10px rgba($color3, 0.5);
+
+  font-size: 1rem;
+
+  max-height: 220px;
+  overflow: auto;
+}
+
+.select__option {
+  padding: 8px 10px;
+  cursor: pointer;
+
+  font-size: 1.5rem;
+
+  &:hover {
+    // background: rgba($color3, 0.1);
+    background: $color3;
+    color: $color0;
+  }
+}
+
+.select__option--active {
+  // background: rgba($color3, 0.1);
+  background: $color3;
+  color: $color2;
+}
+
+// .select__option--selected {
+//   font-weight: 600;
+// }
+
+.select__option--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+
+  &:hover {
+    background: transparent;
+  }
+}

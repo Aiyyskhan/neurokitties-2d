@@ -1,0 +1,22 @@
+@use "@/assets/styles/global.scss" as *;
+
+.kitty-avatar {
+    @include flex-center;
+    width: 100%;
+    position: relative;
+
+    .phaser-container {
+        @include flex-center;
+        width: calc(100% + $border-lw * 2);
+        height: calc(100% + $border-lw * 2);
+    
+        // border: $color3 $border-lw solid;
+    
+        canvas {
+            width: 100%;
+            // border: $color3 $border-lw solid;
+            // border-radius: 10px;
+        }
+    }
+}
+

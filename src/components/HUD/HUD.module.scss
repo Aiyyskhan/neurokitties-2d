@@ -1,0 +1,95 @@
+@use "@/assets/styles/global.scss" as *;
+
+.hud {
+    @extend %panel-styles;
+    @include flex-center($jc: space-around);
+    position: absolute;
+    z-index: 10;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: $hud-height; //7rem; //12%;
+    min-height: 83px;
+    border-bottom: $color3 $border-lw solid;
+
+    &-info {
+        @include flex-center($jc: space-between);
+        flex: 2;
+        height: 100%;
+        gap: 1rem;
+        padding-left: 1rem;
+        font-size: 1.5rem;
+        font-weight: normal;
+
+        &-episode-score {
+            @extend %info-items-styles;
+            @include flex-center($ai: start);
+            flex-direction: column;
+            gap: 0.8rem;
+            height: 100%;
+            
+            span {
+                min-width: 30%;
+            }
+        }
+
+        &-selected-kitties {
+            @extend %info-items-styles;
+            @include flex-center();
+            flex-direction: column;
+            height: 100%;
+
+            span {
+                min-width: 80%;
+                text-align: start;
+            }
+        }
+    }
+
+    &-controls {
+        flex: 1;
+        height: 100%;
+        display: flex;
+        justify-content: end;
+        gap: 1rem;
+        padding-right: 1rem;
+
+        &-btn {
+            box-sizing: content-box;
+            height: 100%;
+            // display: flex;
+            // flex-direction: column;
+            // justify-content: center;
+
+            // button {
+            //     @extend %btn-styles;
+            //     // height: calc($hud-height * 0.4);
+            // }
+
+            &-evo {
+                margin-top: 35%; //calc($hud-height * 0.25);
+            }
+            &-nft {
+                margin-top: 57%;
+            }
+            &-start {
+                margin-top: 18%;
+            }
+            &-pause {
+                margin-top: 18%;
+            }
+            &-manual {
+                margin-top: 60%;
+            }
+            &-exit {
+                margin-top: 35%;
+            }
+            &-wallet {
+                @include flex-center();
+                flex-direction: column;
+                height: 100%;
+            }
+        }
+    }    
+}
+  

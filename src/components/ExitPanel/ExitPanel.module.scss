@@ -1,0 +1,54 @@
+@use "@/assets/styles/global.scss" as *;
+
+.exitPanel {
+    @include flex-center;
+    flex-direction: column;
+    gap: 1.2rem;
+
+    width: 100%;
+    height: 100%;
+    text-align: center;
+
+    /* Заголовок */
+    &-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+
+    /* Текст-пояснение */
+    &-text {
+        font-size: 1.5rem;
+        opacity: 0.85;
+        max-width: 420px;
+    }
+
+    /* Контейнер кнопок */
+    &-actions {
+        margin-top: 1.5rem;
+        display: flex;
+        gap: 1rem;
+    }
+
+    /* Базовая кнопка */
+    &-btn {
+        @extend %btn-styles;
+        min-width: 140px;
+        padding: 0.6rem 1rem;
+        font-size: 1.5rem;
+    }
+
+    /* Кнопка подтверждения выхода */
+    &-btn-danger {
+        background-color: $color2;
+        color: $color3;
+        border: $border-lw solid $color3;
+
+        &:hover {
+            background-color: $color_danger !important;
+            border: $border-lw solid $color_danger;
+            // background-color: $color2 !important;
+            // color: $color3 !important;
+        }
+    }
+}
