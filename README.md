@@ -30,8 +30,8 @@
 <h3>📥 Installation</h3>
 <ol>
     <li>Clone the repository:
-        <pre><code>git clone https://github.com/Aiyyskhan/NeuroKitties_2D.git
-cd NeuroKitties_2D</code></pre>
+        <pre><code>git clone https://github.com/Aiyyskhan/neurokitties-2d.git
+cd neuroKitties-2d</code></pre>
     </li>
     <li>Install dependencies:
         <pre><code>npm install</code></pre>
