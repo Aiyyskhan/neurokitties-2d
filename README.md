@@ -1,6 +1,6 @@
 <h1> NeuroKitties 2D </h1>
 
-![Version](https://img.shields.io/github/v/tag/Aiyyskhan/neurokitties-2d?label=version&style=flat-square)
+![Version](https://img.shields.io/github/v/tag/Aiyyskhan/neurokitties-2d?label=version&color=849e0e&style=flat-square)
 ![License](https://img.shields.io/github/license/Aiyyskhan/neurokitties-2d?label=license&style=flat-square)
 ![TensorFlow.js](https://img.shields.io/badge/AI-TensorFlow.js-FF6F00?logo=tensorflow&logoColor=white&style=flat-square)
 ![Solana](https://img.shields.io/badge/blockchain-Solana-9945FF?logo=solana&logoColor=white&style=flat-square)
