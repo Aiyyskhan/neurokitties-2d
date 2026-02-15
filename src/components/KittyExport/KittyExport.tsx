@@ -141,10 +141,11 @@ const KittyExport: FC<KittyExportProps> = ({ ref }) => {
             </div>
 
             <div className={styles["export-path"]}>
-                <label htmlFor="kitty-json-path">Save path (.json):</label>
+                <label htmlFor="kitty-json-path">NeuroKitty save file:</label>
                 <input
                     id="kitty-json-path"
                     value={savePath}
+                    readOnly
                     onChange={(event) => setSavePath(event.target.value)}
                     onKeyDownCapture={(event) => event.stopPropagation()}
                     className={styles["export-path-input"]}
@@ -153,9 +154,9 @@ const KittyExport: FC<KittyExportProps> = ({ ref }) => {
                 />
             </div>
 
-            <div className={styles["export-hint"]}>
+            {/* <div className={styles["export-hint"]}>
                 {pathIsValid ? "Path is valid." : "Enter a valid file path ending with .json"}
-            </div>
+            </div> */}
 
             <div className={styles["export-button"]}>
                 <SoundButton className={styles["save"]} onClick={exportJson} disabled={!pathIsValid || isExporting}>

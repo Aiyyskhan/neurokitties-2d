@@ -8,6 +8,7 @@ import { SoundButton } from "@/components/SoundButton";
 import { useSolanaNetwork } from "@/context/SolanaNetworkContext";
 import { NetworkSelect } from "@/components/NetworkSelect";
 import { NFTgallery } from "@/components/NFTgallery";
+import { KittyImport } from "@/components/KittyImport";
 import { DonationPanel } from "@/components/DonationPanel";
 import { ThanksPanel } from "@/components/ThanksPanel";
 import { initRandomPopulation, POPULATION_GENOME } from "@/neuroevolution/genomes";
@@ -25,6 +26,7 @@ const Menu: React.FC<MenuProps> = ({ ref }) => {
     const { connected } = useWallet();
     const [nftsPanel, setNftsPanel] = useState<boolean>(false);
     const [nftsShow, setNftsShow] = useState<boolean>(false);
+    const [importPanel, setImportPanel] = useState<boolean>(false);
     const { network, setNetwork, endpoint, setEndpoint } = useSolanaNetwork();
     const [donationShow, setDonationShow] = useState<boolean>(false);
     const [thanksShow, setThanksShow] = useState<boolean>(false);
@@ -76,6 +78,9 @@ const Menu: React.FC<MenuProps> = ({ ref }) => {
                     </div>
                 }
                 <div className={styles["menu-btn"]}>
+                    <SoundButton onClick={() => setImportPanel(true)}>IMPORT</SoundButton>
+                </div>
+                <div className={styles["menu-btn"]}>
                     <SoundButton onClick={() => setThanksShow(true)}>THANKS</SoundButton>
                 </div>
                 <div className={styles["menu-btn"]}>
@@ -109,6 +114,11 @@ const Menu: React.FC<MenuProps> = ({ ref }) => {
                         ) : (
                             <NFTgallery />
                         )}
+                    </Modal>
+                )}
+                {importPanel && (
+                    <Modal onExit={() => setImportPanel(false)}>
+                        <KittyImport />
                     </Modal>
                 )}
                 {thanksShow && (
