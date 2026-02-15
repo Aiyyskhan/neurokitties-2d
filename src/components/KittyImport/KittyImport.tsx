@@ -94,6 +94,14 @@ const isPickerBlockedByFramePolicy = (error: unknown): boolean => {
     return domName === "SecurityError" || message.includes("cross origin");
 };
 
+const isEmbeddedFrame = (): boolean => {
+    try {
+        return window.self !== window.top;
+    } catch {
+        return true;
+    }
+};
+
 const KittyImport: React.FC = () => {
     const [folderPath, setFolderPath] = useState<string>("");
     const [folderHandle, setFolderHandle] = useState<FileSystemDirectoryHandleLike | null>(null);
@@ -104,10 +112,6 @@ const KittyImport: React.FC = () => {
     const [status, setStatus] = useState<string>("");
     const [kitties, setKitties] = useState<ImportedKitty[]>([]);
     const filesInputRef = useRef<HTMLInputElement | null>(null);
-    const supportsDirectoryPicker = useMemo(() => {
-        return typeof window !== "undefined" && typeof (window as FileSystemWindow).showDirectoryPicker === "function";
-    }, []);
-
     useEffect(() => {
         return () => {
             kitties.forEach((kitty) => {
@@ -233,18 +237,18 @@ const KittyImport: React.FC = () => {
             setSelectedFiles([]);
             setFolderPath(handle.name);
             setIsFolderEmpty(!hasAnyEntries);
-            setStatus(hasAnyEntries ? "" : "Selected folder is empty. Choose a folder with kitty JSON + PNG files.");
+            setStatus(hasAnyEntries ? "" : "Selected source is empty. Choose JSON + PNG files.");
             setLoadDone(false);
             setKitties([]);
         } catch (error) {
             if (isUserCanceled(error)) {
-                setStatus("Folder selection was canceled.");
+                setStatus("Selection was canceled.");
             } else if (isPickerBlockedByFramePolicy(error)) {
                 setStatus("Folder picker is blocked in embedded mode. Choose files manually.");
                 chooseFilesFallback();
             } else {
                 const message = error instanceof Error ? error.message : String(error);
-                setStatus(`Failed to select folder: ${message}`);
+                setStatus(`Failed to choose files: ${message}`);
             }
         }
     };
@@ -282,7 +286,7 @@ const KittyImport: React.FC = () => {
             setLoadDone(true);
 
             if (validKitties.length === 0) {
-                setStatus("No valid kitty JSON files found in selected folder.");
+                setStatus("No valid kitty JSON files found in selected files.");
             } else if (invalidFiles > 0) {
                 setStatus(`Loaded ${validKitties.length} kitty JSON file(s). Skipped ${invalidFiles} invalid JSON file(s).`);
             } else {
@@ -290,7 +294,7 @@ const KittyImport: React.FC = () => {
             }
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
-            setStatus(`Failed to read folder: ${message}`);
+            setStatus(`Failed to read selected files: ${message}`);
         } finally {
             setIsLoading(false);
         }
@@ -360,18 +364,28 @@ const KittyImport: React.FC = () => {
                     onChange={onFilesSelected}
                 />
                 <div className={styles["folder-path"]}>
-                    <label htmlFor="kitty-folder-path">Folder with kitty JSON + PNG files:</label>
+                    <label htmlFor="kitty-folder-path">Kitty JSON + PNG files:</label>
                     <input
                         id="kitty-folder-path"
                         value={folderPath}
                         readOnly
                         onKeyDownCapture={(event) => event.stopPropagation()}
                         className={styles["folder-path-input"]}
-                        placeholder="Select folder (or JSON + PNG files)"
+                        placeholder="Choose exported .json and .png files"
                     />
                 </div>
-                <SoundButton onClick={chooseFolder}>{supportsDirectoryPicker ? "CHOOSE FOLDER" : "CHOOSE FILES"}</SoundButton>
-                {canLoad && <SoundButton onClick={loadJsonKitties}>LOAD</SoundButton>}
+                <SoundButton
+                    onClick={() => {
+                        if (isEmbeddedFrame()) {
+                            chooseFilesFallback();
+                            return;
+                        }
+                        chooseFolder();
+                    }}
+                >
+                    CHOOSE FILES
+                </SoundButton>
+                {canLoad && <SoundButton onClick={loadJsonKitties}>IMPORT FILES</SoundButton>}
                 {status && <div className={styles["kitty-import-status"]}>{status}</div>}
             </div>
         </div>

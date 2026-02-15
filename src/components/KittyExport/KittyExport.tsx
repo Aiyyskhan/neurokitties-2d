@@ -172,13 +172,13 @@ const KittyExport: FC<KittyExportProps> = ({ ref }) => {
             }
 
             setStatus("success");
-            setStatusText("JSON and PNG files have been exported successfully.");
+            setStatusText("JSON and PNG files are ready.");
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             const userCanceled = isUserCanceled(error);
 
             setStatus("error");
-            setStatusText(userCanceled ? "Save operation was canceled." : `Failed to export JSON + PNG: ${message}`);
+            setStatusText(userCanceled ? "Download was canceled." : `Failed to export JSON + PNG files: ${message}`);
         } finally {
             setIsExporting(false);
         }
@@ -190,7 +190,7 @@ const KittyExport: FC<KittyExportProps> = ({ ref }) => {
 
     return (
         <div className={styles["export-panel"]}>
-            <div className={styles["export-title"]}>Export kitty</div>
+            <div className={styles["export-title"]}>Export kitty files</div>
 
             <div className={styles["export-data"]}>
                 <div className={styles["export-preview"]}>
@@ -206,7 +206,7 @@ const KittyExport: FC<KittyExportProps> = ({ ref }) => {
             </div>
 
             <div className={styles["export-path"]}>
-                <label htmlFor="kitty-json-path">Filename:</label>
+                <label htmlFor="kitty-json-path">File name prefix:</label>
                 <input
                     id="kitty-json-path"
                     value={savePath}
@@ -219,13 +219,13 @@ const KittyExport: FC<KittyExportProps> = ({ ref }) => {
                 />
             </div>
 
-            {/* <div className={styles["export-hint"]}>
-                {pathIsValid ? "Path is valid." : "Enter a valid file path ending with .json"}
-            </div> */}
+            <div className={styles["export-hint"]}>
+                Exports two files: <code>.json</code> and <code>.png</code>.
+            </div>
 
             <div className={styles["export-button"]}>
                 <SoundButton className={styles["save"]} onClick={exportJson} disabled={!pathIsValid || isExporting}>
-                    {isExporting ? "EXPORTING..." : "SAVE"}
+                    {isExporting ? "EXPORTING..." : "DOWNLOAD FILES"}
                 </SoundButton>
             </div>
 
