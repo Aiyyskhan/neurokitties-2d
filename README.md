@@ -22,6 +22,11 @@
     NeuroKitties can also be minted as NFTs on the Solana blockchain. By connecting a compatible wallet, you can mint a specific NeuroKitty as a unique on-chain asset, preserving its evolutionary progress. Once minted, the NFT is stored in your wallet and can be transferred or traded like any other digital asset on Solana.
 </p>
 
+<h2>✨ Play the Game</h2>
+
+[![Play on itch.io](https://img.shields.io/badge/Play%20on-itch.io-FA5C5C?logo=itchdotio&logoColor=white&style=for-the-badge)](https://aiyyskhan.itch.io/neurokitties-2d)
+
+
 <h2>🚀 How to Run from Source</h2>
 
 <h3>📦 Prerequisites</h3>
