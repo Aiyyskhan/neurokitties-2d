@@ -12,7 +12,7 @@ type SolanaNetworkContextType = {
 const SolanaNetworkContext = createContext<SolanaNetworkContextType | null>(null);
 
 export const SolanaNetworkProvider: FC<{ children: ReactNode }> = ({ children }) => {
-    const [network, setNetwork] = useState<SolanaCluster>('mainnet');
+    const [network, setNetwork] = useState<SolanaCluster>('devnet');
     const defaultEndpointFor = (net: SolanaCluster) => (net === 'mainnet' ? SOLANA.MAINNET : SOLANA.DEVNET);
 
     const [endpoint, setEndpoint] = useState<string>(() => defaultEndpointFor(network));
