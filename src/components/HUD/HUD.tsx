@@ -4,6 +4,7 @@ import { SelectedKittiesContext, ChampionKittiesContext } from "@/context/GameCo
 import { Modal } from "@/components/Modal";
 import { EvolutionControl, RefEvolutionControl } from "@/components/EvolutionControl";
 import { NFTmint } from "@/components/NFTmint";
+import { KittyExport } from "@/components/KittyExport";
 import { SelectedInfo } from "@/components/SelectedInfo";
 import { RefPhaserGame } from "@/components/PhaserGame";
 import { SoundButton } from "@/components/SoundButton";
@@ -26,7 +27,7 @@ const HUD: React.FC<HUDProps> = ({ ref }) => {
     const { connected } = useWallet();
     const [generation, setGeneration] = useState(1);
     const [isPaused, setIsPaused] = useState(false);
-    const [panelState, setPanelState] = useState<'NFT' | 'EVO' | 'INFO' | 'HIDE'>('HIDE');
+    const [panelState, setPanelState] = useState<'NFT' | 'EXPORT' | 'EVO' | 'INFO' | 'HIDE'>('HIDE');
     const [manualShow, setManualShow] = useState<boolean>(false);
     const [exitPanelShow, setExitPanelShow] = useState<boolean>(false);
     const [info, setInfo] = useState<string | null>(null);
@@ -47,7 +48,7 @@ const HUD: React.FC<HUDProps> = ({ ref }) => {
         brainTransferProb: config.BRAIN_TRANSFER_PROB,
         brainFraction: config.BRAIN_FRACTION,
     });
-    const mintKittyData = useRef<KittyData | null>(null);
+    const selectedKittyData = useRef<KittyData | null>(null);
 
     useLayoutEffect(() => {
         if (ref.current) {
@@ -113,33 +114,36 @@ const HUD: React.FC<HUDProps> = ({ ref }) => {
         }
     };
 
-    const handleNftPanel = () => {
-        // if (selectedKitties && selectedKitties.length > 0 && championKitties && championKitties.length > 0) {
+    const prepareSelectedKittyData = (): boolean => {
         if (selectedKitties && selectedKitties.length > 0) {
             const firstSelectedKittyId = selectedKitties[0].id;
             const firstSelectedKittyProgress = selectedKitties[0].progress;
-        //     // console.log(`firstSelectedKittyId: ${firstSelectedKittyId}`);
-            
-            // if (championKitties.includes(firstSelectedKittyId)) {
-                mintKittyData.current = { 
-                    kitty_id: firstSelectedKittyId, 
-                    generation: generation,
-                    progress: firstSelectedKittyProgress,
-                    genome: POPULATION_GENOME[firstSelectedKittyId],
-                    population_size: config.POPULATION_SIZE,
-                };
-                setPanelState('NFT');
-            // } else {
-            //     const info = `Selected kitty #${firstSelectedKittyId} is not a champion!`;
-            //     console.log(info);
-            //     setPanelState('INFO');
-            //     setInfo(info);
-            // }
+            selectedKittyData.current = { 
+                kitty_id: firstSelectedKittyId, 
+                generation: generation,
+                progress: firstSelectedKittyProgress,
+                genome: POPULATION_GENOME[firstSelectedKittyId],
+                population_size: config.POPULATION_SIZE,
+            };
+            return true;
         } else {
             const info = "No NeuroKitty selected. Please select a NeuroKitty.";
             console.log(info);
             setPanelState('INFO');
             setInfo(info);
+            return false;
+        }
+    };
+
+    const handleNftPanel = () => {
+        if (prepareSelectedKittyData()) {
+            setPanelState('NFT');
+        }
+    };
+
+    const handleExportPanel = () => {
+        if (prepareSelectedKittyData()) {
+            setPanelState('EXPORT');
         }
     };
 
@@ -228,7 +232,7 @@ const HUD: React.FC<HUDProps> = ({ ref }) => {
                                         </div>
                                     </div>
                                 }
-                                { connected &&
+                                { connected ? (
                                     <div className={styles["hud-controls-btn"]}>
                                         <div className={styles["hud-controls-btn-nft"]}>
                                             <SoundButton onClick={handleNftPanel}>
@@ -236,7 +240,15 @@ const HUD: React.FC<HUDProps> = ({ ref }) => {
                                             </SoundButton>
                                         </div>
                                     </div>
-                                }
+                                ) : ( selectedKitties && selectedKitties.length > 0 &&
+                                    <div className={styles["hud-controls-btn"]}>
+                                        <div className={styles["hud-controls-btn-export"]}>
+                                            <SoundButton onClick={handleExportPanel}>
+                                                EXPORT
+                                            </SoundButton>
+                                        </div>
+                                    </div>
+                                )}
                                 <div className={styles["hud-controls-btn"]}>
                                     <div className={styles["hud-controls-btn-start"]}>
                                         <SoundButton onClick={handlePauseToggle}>
@@ -274,7 +286,14 @@ const HUD: React.FC<HUDProps> = ({ ref }) => {
             {
                 isPaused && panelState === 'NFT' && (
                     <Modal onExit={() => setPanelState('HIDE')}>
-                        <NFTmint ref={mintKittyData} />
+                        <NFTmint ref={selectedKittyData} />
+                    </Modal>
+                )
+            }
+            {
+                isPaused && panelState === 'EXPORT' && (
+                    <Modal onExit={() => setPanelState('HIDE')}>
+                        <KittyExport ref={selectedKittyData} />
                     </Modal>
                 )
             }

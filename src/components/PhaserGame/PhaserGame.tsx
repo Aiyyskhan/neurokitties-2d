@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
 import { EventBus } from '@/EventBus';
 import styles from "./PhaserGame.module.scss";
+import * as Phaser from "phaser";
 
 export interface RefPhaserGame
 {
@@ -27,7 +28,15 @@ const PhaserGame: React.FC<PhaserGameProps> = ({ currentActiveScene, gameConfig,
     {
         if (gameInstance.current === null)
         {
-            gameInstance.current = new Phaser.Game({ ...gameConfig, parent: parentElement });
+            const baseConfig = { ...gameConfig, parent: parentElement };
+
+            try {
+                gameInstance.current = new Phaser.Game(baseConfig);
+            } catch (error) {
+                const fallbackConfig = { ...baseConfig, type: Phaser.CANVAS };
+                console.warn("Failed to create WebGL context, falling back to Canvas renderer:", error);
+                gameInstance.current = new Phaser.Game(fallbackConfig);
+            }
 
             updateRef(null, ref);
         }
