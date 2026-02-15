@@ -1,5 +1,4 @@
-import { useMemo, useState } from "react";
-import { KittyAvatar } from "@/components/KittyAvatar";
+import { useEffect, useMemo, useState } from "react";
 import { Spinner } from "@/components/Spinner";
 import { SoundButton } from "@/components/SoundButton";
 import { Genome, POPULATION_GENOME } from "@/neuroevolution/genomes";
@@ -29,7 +28,11 @@ type FileSystemWindow = Window & {
 
 type ImportedKitty = KittyData & {
     sourceFile: string;
+    preview_image?: string;
+    previewImageUrl: string | null;
 };
+
+type PartialImportedKitty = Partial<KittyData> & { preview_image?: unknown };
 
 const isNumber = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
 
@@ -71,29 +74,54 @@ const deepCloneArray = <T,>(arr: T[]): T[] => {
     return arr.map((item) => (Array.isArray(item) ? (deepCloneArray(item as unknown as T[]) as unknown as T) : item));
 };
 
+const getBaseName = (name: string): string => {
+    const dotIndex = name.lastIndexOf(".");
+    return dotIndex > 0 ? name.slice(0, dotIndex) : name;
+};
+
 const KittyImport: React.FC = () => {
     const [folderPath, setFolderPath] = useState<string>("");
     const [folderHandle, setFolderHandle] = useState<FileSystemDirectoryHandleLike | null>(null);
+    const [isFolderEmpty, setIsFolderEmpty] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [loadDone, setLoadDone] = useState<boolean>(false);
     const [status, setStatus] = useState<string>("");
     const [kitties, setKitties] = useState<ImportedKitty[]>([]);
 
-    const canLoad = useMemo(() => !!folderHandle && folderPath.trim().length > 0, [folderHandle, folderPath]);
+    useEffect(() => {
+        return () => {
+            kitties.forEach((kitty) => {
+                if (kitty.previewImageUrl) {
+                    URL.revokeObjectURL(kitty.previewImageUrl);
+                }
+            });
+        };
+    }, [kitties]);
+
+    const canLoad = useMemo(() => {
+        return !!folderHandle && folderPath.trim().length > 0 && !isFolderEmpty;
+    }, [folderHandle, folderPath, isFolderEmpty]);
 
     const chooseFolder = async () => {
         try {
             const browserWindow = window as FileSystemWindow;
 
             if (!browserWindow.showDirectoryPicker) {
-                setStatus("Folder picker is not supported in this browser.");
+                setStatus("Folder picker is not supported in this browser. Use a Chromium-based browser.");
                 return;
             }
 
             const handle = await browserWindow.showDirectoryPicker();
+            let hasAnyEntries = false;
+            for await (const _entry of handle.entries()) {
+                hasAnyEntries = true;
+                break;
+            }
+
             setFolderHandle(handle);
             setFolderPath(handle.name);
-            setStatus("");
+            setIsFolderEmpty(!hasAnyEntries);
+            setStatus(hasAnyEntries ? "" : "Selected folder is empty. Choose a folder with kitty JSON + PNG files.");
             setLoadDone(false);
             setKitties([]);
         } catch (error) {
@@ -119,20 +147,52 @@ const KittyImport: React.FC = () => {
         let invalidFiles = 0;
 
         try {
+            const fileHandles = new Map<string, FileSystemFileHandleLike>();
+
             for await (const [name, handle] of folderHandle.entries()) {
-                if (handle.kind !== "file" || !name.toLowerCase().endsWith(".json")) {
+                if (handle.kind !== "file") {
                     continue;
                 }
 
                 const fileHandle = handle as FileSystemFileHandleLike;
+                fileHandles.set(name, fileHandle);
+            }
+
+            for (const [name, fileHandle] of fileHandles) {
+                if (!name.toLowerCase().endsWith(".json")) {
+                    continue;
+                }
+
                 const file = await fileHandle.getFile();
                 const text = await file.text();
 
                 try {
                     const parsed = JSON.parse(text) as unknown;
+                    const parsedWithPreview = parsed as PartialImportedKitty;
+                    const previewFromJson = parsedWithPreview.preview_image;
 
-                    if (isKittyData(parsed)) {
-                        validKitties.push({ ...parsed, sourceFile: name });
+                    if (isKittyData(parsedWithPreview)) {
+                        const kittyData = parsedWithPreview;
+                        let previewImageFile = "";
+                        if (typeof previewFromJson === "string") {
+                            previewImageFile = previewFromJson;
+                        } else {
+                            previewImageFile = `${getBaseName(name)}.png`;
+                        }
+
+                        let previewImageUrl: string | null = null;
+                        const previewHandle = fileHandles.get(previewImageFile);
+                        if (previewHandle) {
+                            const previewFile = await previewHandle.getFile();
+                            previewImageUrl = URL.createObjectURL(previewFile);
+                        }
+
+                        validKitties.push({
+                            ...kittyData,
+                            sourceFile: name,
+                            preview_image: previewImageFile,
+                            previewImageUrl,
+                        });
                     } else {
                         invalidFiles += 1;
                     }
@@ -147,9 +207,9 @@ const KittyImport: React.FC = () => {
             if (validKitties.length === 0) {
                 setStatus("No valid kitty JSON files found in selected folder.");
             } else if (invalidFiles > 0) {
-                setStatus(`Loaded ${validKitties.length} kitty files. Skipped ${invalidFiles} invalid JSON file(s).`);
+                setStatus(`Loaded ${validKitties.length} kitty JSON file(s). Skipped ${invalidFiles} invalid JSON file(s).`);
             } else {
-                setStatus(`Loaded ${validKitties.length} kitty file(s).`);
+                setStatus(`Loaded ${validKitties.length} kitty JSON file(s).`);
             }
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
@@ -186,7 +246,11 @@ const KittyImport: React.FC = () => {
                     {kitties.map((kitty, index) => (
                         <div key={`${kitty.sourceFile}-${index}`} className={styles["kitty-card"]}>
                             <div className={styles["kitty-card-left"]}>
-                                <KittyAvatar colorArray={[...kitty.genome.COLORS]} />
+                                {kitty.previewImageUrl ? (
+                                    <img src={kitty.previewImageUrl} alt={`Kitty #${kitty.kitty_id}`} className={styles["kitty-preview-image"]} />
+                                ) : (
+                                    <div className={styles["kitty-preview-missing"]}>PNG preview not found</div>
+                                )}
                                 <div className={styles["kitty-selection-btn"]}>
                                     <SoundButton onClick={() => selectKitty(index)}>SELECT</SoundButton>
                                 </div>
@@ -211,18 +275,18 @@ const KittyImport: React.FC = () => {
         <div className={styles["kitty-import"]}>
             <div className={styles["kitty-import-start"]}>
                 <div className={styles["folder-path"]}>
-                    <label htmlFor="kitty-folder-path">Folder path:</label>
+                    <label htmlFor="kitty-folder-path">Folder with kitty JSON + PNG files:</label>
                     <input
                         id="kitty-folder-path"
                         value={folderPath}
                         readOnly
                         onKeyDownCapture={(event) => event.stopPropagation()}
                         className={styles["folder-path-input"]}
-                        placeholder="Select folder with kitty JSON files"
+                        placeholder="Select folder with exported JSON and PNG files"
                     />
                 </div>
                 <SoundButton onClick={chooseFolder}>CHOOSE FOLDER</SoundButton>
-                {canLoad && <SoundButton onClick={loadJsonKitties}>LOAD JSONs</SoundButton>}
+                {canLoad && <SoundButton onClick={loadJsonKitties}>LOAD</SoundButton>}
                 {status && <div className={styles["kitty-import-status"]}>{status}</div>}
             </div>
         </div>

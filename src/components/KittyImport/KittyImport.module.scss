@@ -51,7 +51,7 @@
         width: 100%;
         border: $border-lw solid $color3;
         padding: 0.5rem;
-        background-color: $color1;
+        background-color: $color2;
         color: $color3;
         font-size: 1.2rem;
         white-space: pre-wrap;
@@ -86,6 +86,25 @@
             @include flex-center($jc: space-around);
             flex-direction: column;
             gap: 0.5rem;
+
+            .kitty-preview-image {
+                display: block;
+                width: 100%;
+                object-fit: contain;
+                image-rendering: pixelated;
+            }
+
+            .kitty-preview-missing {
+                @include flex-center;
+                width: 100%;
+                min-height: 128px;
+                border: $border-lw solid $color3;
+                background-color: $color1;
+                color: $color3;
+                font-size: 1rem;
+                text-align: center;
+                padding: 0.3rem;
+            }
 
             .kitty-selection-btn {
                 width: 100%;

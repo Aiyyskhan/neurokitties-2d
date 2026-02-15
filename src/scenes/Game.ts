@@ -387,7 +387,7 @@ export default class GameScene extends Phaser.Scene {
                     // const totalSectors = this.checkpointsGroup ? this.checkpointsGroup.getLength() : 0;
                     const visited = kitty.progress.size;
                     // this.kittyInfo.setText(`# ${kitty.id} (${visited}/${totalSectors} sectors)`)
-                    this.kittyInfo.setText(`# ${kitty.id} (score: ${visited})`)
+                    this.kittyInfo.setText(`# ${kitty.id} (progress: ${visited})`)
                         .setVisible(true).setPosition(kitty.base.x, kitty.base.y-20).setDepth(kitty.base.y+1000);
                 }
             })

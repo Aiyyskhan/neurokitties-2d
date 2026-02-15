@@ -1,4 +1,5 @@
-import { FC, useEffect, useMemo, useState } from "react";
+import { FC, useEffect, useMemo, useRef, useState } from "react";
+import { KittyAvatar, RefKittyAvatar } from "@/components/KittyAvatar";
 import { SoundButton } from "@/components/SoundButton";
 import type { KittyData } from "@/types/game";
 
@@ -17,53 +18,48 @@ type FileSystemWindow = Window & {
         }>;
     }) => Promise<{
         createWritable: () => Promise<{
-            write: (data: string) => Promise<void>;
+            write: (data: string | Blob) => Promise<void>;
             close: () => Promise<void>;
         }>;
     }>;
 };
 
-const WINDOWS_PATH_REGEX = /^[a-zA-Z]:[\\/](?:[^<>:"|?*\n\r]+[\\/])*[^<>:"|?*\n\r]+\.json$/;
-const UNIX_PATH_REGEX = /^\/(?:[^/\0]+\/)*[^/\0]+\.json$/;
-const RELATIVE_PATH_REGEX = /^(?:\.{1,2}[\\/])?(?:[^<>:"|?*\n\r\\/]+[\\/])*[^<>:"|?*\n\r\\/]+\.json$/;
+interface ExportedKittyData extends KittyData {
+    preview_image: string;
+}
 
-const isValidJsonPath = (value: string): boolean => {
-    const path = value.trim();
-
-    if (!path || !path.toLowerCase().endsWith(".json")) {
-        return false;
-    }
-
-    return WINDOWS_PATH_REGEX.test(path) || UNIX_PATH_REGEX.test(path) || RELATIVE_PATH_REGEX.test(path);
-};
-
-const getFileNameFromPath = (path: string): string => {
-    const normalized = path.trim();
-    const parts = normalized.split(/[\\/]/).filter(Boolean);
-    return parts[parts.length - 1] || "kitty-export.json";
+const isValidBaseName = (value: string): boolean => {
+    return value.trim().length > 0;
 };
 
 const makeShortUniqueId = (): string => {
     return Math.random().toString(36).slice(2, 6);
 };
 
-const getDefaultExportFileName = (kittyData: KittyData): string => {
-    const progress = kittyData.progress.toFixed(2).replace(".", "_");
-    return `nk${kittyData.kitty_id}_g${kittyData.generation}_p${progress}_${makeShortUniqueId()}.json`;
+const getDefaultExportBaseName = (kittyData: KittyData): string => {
+    const normalizedProgress = Number(kittyData.progress.toFixed(2)).toString();
+    const progress = normalizedProgress.replace(".", "_");
+    return `nk${kittyData.kitty_id}_g${kittyData.generation}_p${progress}_${makeShortUniqueId()}`;
+};
+
+const dataUrlToBlob = async (dataUrl: string): Promise<Blob> => {
+    const response = await fetch(dataUrl);
+    return await response.blob();
 };
 
 const KittyExport: FC<KittyExportProps> = ({ ref }) => {
+    const kittyAvatarSnapshot = useRef<RefKittyAvatar | null>(null);
     const [savePath, setSavePath] = useState<string>("");
     const [isExporting, setIsExporting] = useState(false);
     const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
     const [statusText, setStatusText] = useState<string>("");
 
     const kittyData = ref.current;
-    const pathIsValid = useMemo(() => isValidJsonPath(savePath), [savePath]);
+    const pathIsValid = useMemo(() => isValidBaseName(savePath), [savePath]);
 
     useEffect(() => {
         if (kittyData && !savePath) {
-            setSavePath(getDefaultExportFileName(kittyData));
+            setSavePath(getDefaultExportBaseName(kittyData));
         }
     }, [kittyData, savePath]);
 
@@ -76,15 +72,30 @@ const KittyExport: FC<KittyExportProps> = ({ ref }) => {
         setStatus("idle");
         setStatusText("");
 
-        const jsonContent = JSON.stringify(kittyData, null, 2);
-        const fileName = getFileNameFromPath(savePath);
+        const snapshotBase64 = kittyAvatarSnapshot.current?.snapshotBase64;
+        if (!snapshotBase64) {
+            setStatus("error");
+            setStatusText("Kitty PNG preview is not ready yet. Try again in a second.");
+            setIsExporting(false);
+            return;
+        }
+
+        const baseName = savePath.trim();
+        const jsonFileName = `${baseName}.json`;
+        const pngFileName = `${baseName}.png`;
+        const exportPayload: ExportedKittyData = {
+            ...kittyData,
+            preview_image: pngFileName,
+        };
+        const jsonContent = JSON.stringify(exportPayload, null, 2);
+        const pngBlob = await dataUrlToBlob(snapshotBase64);
 
         try {
             const browserWindow = window as FileSystemWindow;
 
             if (browserWindow.showSaveFilePicker) {
-                const fileHandle = await browserWindow.showSaveFilePicker({
-                    suggestedName: fileName,
+                const jsonHandle = await browserWindow.showSaveFilePicker({
+                    suggestedName: jsonFileName,
                     types: [
                         {
                             description: "JSON",
@@ -95,30 +106,56 @@ const KittyExport: FC<KittyExportProps> = ({ ref }) => {
                     ],
                 });
 
-                const writable = await fileHandle.createWritable();
-                await writable.write(jsonContent);
-                await writable.close();
-            } else {
-                const blob = new Blob([jsonContent], { type: "application/json" });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement("a");
+                const jsonWritable = await jsonHandle.createWritable();
+                await jsonWritable.write(jsonContent);
+                await jsonWritable.close();
 
-                link.href = url;
-                link.download = fileName;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
+                const pngHandle = await browserWindow.showSaveFilePicker({
+                    suggestedName: pngFileName,
+                    types: [
+                        {
+                            description: "PNG",
+                            accept: {
+                                "image/png": [".png"],
+                            },
+                        },
+                    ],
+                });
+
+                const pngWritable = await pngHandle.createWritable();
+                await pngWritable.write(pngBlob);
+                await pngWritable.close();
+            } else {
+                const jsonBlob = new Blob([jsonContent], { type: "application/json" });
+                const jsonUrl = URL.createObjectURL(jsonBlob);
+                const jsonLink = document.createElement("a");
+
+                jsonLink.href = jsonUrl;
+                jsonLink.download = jsonFileName;
+                document.body.appendChild(jsonLink);
+                jsonLink.click();
+                document.body.removeChild(jsonLink);
+                URL.revokeObjectURL(jsonUrl);
+
+                const pngUrl = URL.createObjectURL(pngBlob);
+                const pngLink = document.createElement("a");
+
+                pngLink.href = pngUrl;
+                pngLink.download = pngFileName;
+                document.body.appendChild(pngLink);
+                pngLink.click();
+                document.body.removeChild(pngLink);
+                URL.revokeObjectURL(pngUrl);
             }
 
             setStatus("success");
-            setStatusText("JSON file has been exported successfully.");
+            setStatusText("JSON and PNG files have been exported successfully.");
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             const userCanceled = message.toLowerCase().includes("abort");
 
             setStatus("error");
-            setStatusText(userCanceled ? "Save operation was canceled." : `Failed to export JSON: ${message}`);
+            setStatusText(userCanceled ? "Save operation was canceled." : `Failed to export JSON + PNG: ${message}`);
         } finally {
             setIsExporting(false);
         }
@@ -130,18 +167,23 @@ const KittyExport: FC<KittyExportProps> = ({ ref }) => {
 
     return (
         <div className={styles["export-panel"]}>
-            <div className={styles["export-title"]}>Export kitty data</div>
+            <div className={styles["export-title"]}>Export kitty</div>
 
-            <div className={styles["export-meta"]}>
-                <div>- kitty_id: {kittyData.kitty_id}</div>
-                <div>- generation: {kittyData.generation}</div>
-                <div>- progress: {kittyData.progress}</div>
-                <div>- population_size: {kittyData.population_size}</div>
-                <div>- genome</div>
+            <div className={styles["export-data"]}>
+                <div className={styles["export-preview"]}>
+                    <KittyAvatar ref={kittyAvatarSnapshot} colorArray={kittyData.genome.COLORS} />
+                </div>
+                <div className={styles["export-meta"]}>
+                    <div>- kitty_id: {kittyData.kitty_id}</div>
+                    <div>- generation: {kittyData.generation}</div>
+                    <div>- progress: {kittyData.progress}</div>
+                    <div>- population_size: {kittyData.population_size}</div>
+                    <div>- genome</div>
+                </div>
             </div>
 
             <div className={styles["export-path"]}>
-                <label htmlFor="kitty-json-path">NeuroKitty save file:</label>
+                <label htmlFor="kitty-json-path">Filename:</label>
                 <input
                     id="kitty-json-path"
                     value={savePath}
@@ -150,7 +192,7 @@ const KittyExport: FC<KittyExportProps> = ({ ref }) => {
                     onKeyDownCapture={(event) => event.stopPropagation()}
                     className={styles["export-path-input"]}
                     inputMode="text"
-                    placeholder="./nk_k0_g1_p0_00_ab12.json"
+                    placeholder="nk0_g1_p0_ab12"
                 />
             </div>
 
@@ -160,7 +202,7 @@ const KittyExport: FC<KittyExportProps> = ({ ref }) => {
 
             <div className={styles["export-button"]}>
                 <SoundButton className={styles["save"]} onClick={exportJson} disabled={!pathIsValid || isExporting}>
-                    {isExporting ? "EXPORTING..." : "EXPORT JSON"}
+                    {isExporting ? "EXPORTING..." : "SAVE"}
                 </SoundButton>
             </div>
 
