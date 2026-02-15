@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Spinner } from "@/components/Spinner";
 import { SoundButton } from "@/components/SoundButton";
 import { Genome, POPULATION_GENOME } from "@/neuroevolution/genomes";
@@ -24,6 +24,10 @@ type FileSystemDirectoryHandleLike = FileSystemHandleLike & {
 
 type FileSystemWindow = Window & {
     showDirectoryPicker?: () => Promise<FileSystemDirectoryHandleLike>;
+};
+
+type FileWithRelativePath = File & {
+    webkitRelativePath?: string;
 };
 
 type ImportedKitty = KittyData & {
@@ -79,14 +83,30 @@ const getBaseName = (name: string): string => {
     return dotIndex > 0 ? name.slice(0, dotIndex) : name;
 };
 
+const isUserCanceled = (error: unknown): boolean => {
+    const message = error instanceof Error ? error.message : String(error);
+    return message.toLowerCase().includes("abort");
+};
+
+const isPickerBlockedByFramePolicy = (error: unknown): boolean => {
+    const message = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+    const domName = error instanceof DOMException ? error.name : "";
+    return domName === "SecurityError" || message.includes("cross origin");
+};
+
 const KittyImport: React.FC = () => {
     const [folderPath, setFolderPath] = useState<string>("");
     const [folderHandle, setFolderHandle] = useState<FileSystemDirectoryHandleLike | null>(null);
+    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [isFolderEmpty, setIsFolderEmpty] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [loadDone, setLoadDone] = useState<boolean>(false);
     const [status, setStatus] = useState<string>("");
     const [kitties, setKitties] = useState<ImportedKitty[]>([]);
+    const filesInputRef = useRef<HTMLInputElement | null>(null);
+    const supportsDirectoryPicker = useMemo(() => {
+        return typeof window !== "undefined" && typeof (window as FileSystemWindow).showDirectoryPicker === "function";
+    }, []);
 
     useEffect(() => {
         return () => {
@@ -99,15 +119,106 @@ const KittyImport: React.FC = () => {
     }, [kitties]);
 
     const canLoad = useMemo(() => {
-        return !!folderHandle && folderPath.trim().length > 0 && !isFolderEmpty;
-    }, [folderHandle, folderPath, isFolderEmpty]);
+        if (folderHandle) {
+            return folderPath.trim().length > 0 && !isFolderEmpty;
+        }
+
+        return selectedFiles.length > 0;
+    }, [folderHandle, folderPath, isFolderEmpty, selectedFiles]);
+
+    const buildKittiesFromFileMap = async (fileMap: Map<string, File>): Promise<{ kitties: ImportedKitty[]; invalidFiles: number }> => {
+        const validKitties: ImportedKitty[] = [];
+        let invalidFiles = 0;
+
+        for (const [name, file] of fileMap) {
+            if (!name.toLowerCase().endsWith(".json")) {
+                continue;
+            }
+
+            const text = await file.text();
+
+            try {
+                const parsed = JSON.parse(text) as unknown;
+                const parsedWithPreview = parsed as PartialImportedKitty;
+                const previewFromJson = parsedWithPreview.preview_image;
+
+                if (isKittyData(parsedWithPreview)) {
+                    const kittyData = parsedWithPreview;
+                    let previewImageFile = "";
+                    if (typeof previewFromJson === "string") {
+                        previewImageFile = previewFromJson;
+                    } else {
+                        previewImageFile = `${getBaseName(name)}.png`;
+                    }
+
+                    let previewImageUrl: string | null = null;
+                    const previewFile = fileMap.get(previewImageFile);
+                    if (previewFile) {
+                        previewImageUrl = URL.createObjectURL(previewFile);
+                    }
+
+                    validKitties.push({
+                        ...kittyData,
+                        sourceFile: name,
+                        preview_image: previewImageFile,
+                        previewImageUrl,
+                    });
+                } else {
+                    invalidFiles += 1;
+                }
+            } catch {
+                invalidFiles += 1;
+            }
+        }
+
+        return { kitties: validKitties, invalidFiles };
+    };
+
+    const chooseFilesFallback = () => {
+        if (!filesInputRef.current) {
+            return;
+        }
+
+        filesInputRef.current.value = "";
+        filesInputRef.current.click();
+    };
+
+    const onFilesSelected: React.ChangeEventHandler<HTMLInputElement> = (event) => {
+        const files = Array.from(event.target.files ?? []);
+        setFolderHandle(null);
+        setLoadDone(false);
+        setKitties([]);
+
+        if (files.length === 0) {
+            setSelectedFiles([]);
+            setFolderPath("");
+            setIsFolderEmpty(true);
+            setStatus("File selection was canceled.");
+            return;
+        }
+
+        const displayFolderName = (() => {
+            const first = files[0] as FileWithRelativePath;
+            const relative = first.webkitRelativePath;
+            if (!relative || !relative.includes("/")) {
+                return `${files.length} file(s) selected`;
+            }
+
+            return relative.split("/")[0] || `${files.length} file(s) selected`;
+        })();
+
+        setSelectedFiles(files);
+        setFolderPath(displayFolderName);
+        setIsFolderEmpty(false);
+        setStatus("");
+    };
 
     const chooseFolder = async () => {
         try {
             const browserWindow = window as FileSystemWindow;
 
             if (!browserWindow.showDirectoryPicker) {
-                setStatus("Folder picker is not supported in this browser. Use a Chromium-based browser.");
+                chooseFilesFallback();
                 return;
             }
 
@@ -119,23 +230,27 @@ const KittyImport: React.FC = () => {
             }
 
             setFolderHandle(handle);
+            setSelectedFiles([]);
             setFolderPath(handle.name);
             setIsFolderEmpty(!hasAnyEntries);
             setStatus(hasAnyEntries ? "" : "Selected folder is empty. Choose a folder with kitty JSON + PNG files.");
             setLoadDone(false);
             setKitties([]);
         } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            if (message.toLowerCase().includes("abort")) {
+            if (isUserCanceled(error)) {
                 setStatus("Folder selection was canceled.");
+            } else if (isPickerBlockedByFramePolicy(error)) {
+                setStatus("Folder picker is blocked in embedded mode. Choose files manually.");
+                chooseFilesFallback();
             } else {
+                const message = error instanceof Error ? error.message : String(error);
                 setStatus(`Failed to select folder: ${message}`);
             }
         }
     };
 
     const loadJsonKitties = async () => {
-        if (!folderHandle || isLoading) {
+        if (isLoading || (!folderHandle && selectedFiles.length === 0)) {
             return;
         }
 
@@ -143,64 +258,26 @@ const KittyImport: React.FC = () => {
         setLoadDone(false);
         setStatus("");
 
-        const validKitties: ImportedKitty[] = [];
-        let invalidFiles = 0;
-
         try {
-            const fileHandles = new Map<string, FileSystemFileHandleLike>();
+            const fileMap = new Map<string, File>();
 
-            for await (const [name, handle] of folderHandle.entries()) {
-                if (handle.kind !== "file") {
-                    continue;
-                }
-
-                const fileHandle = handle as FileSystemFileHandleLike;
-                fileHandles.set(name, fileHandle);
-            }
-
-            for (const [name, fileHandle] of fileHandles) {
-                if (!name.toLowerCase().endsWith(".json")) {
-                    continue;
-                }
-
-                const file = await fileHandle.getFile();
-                const text = await file.text();
-
-                try {
-                    const parsed = JSON.parse(text) as unknown;
-                    const parsedWithPreview = parsed as PartialImportedKitty;
-                    const previewFromJson = parsedWithPreview.preview_image;
-
-                    if (isKittyData(parsedWithPreview)) {
-                        const kittyData = parsedWithPreview;
-                        let previewImageFile = "";
-                        if (typeof previewFromJson === "string") {
-                            previewImageFile = previewFromJson;
-                        } else {
-                            previewImageFile = `${getBaseName(name)}.png`;
-                        }
-
-                        let previewImageUrl: string | null = null;
-                        const previewHandle = fileHandles.get(previewImageFile);
-                        if (previewHandle) {
-                            const previewFile = await previewHandle.getFile();
-                            previewImageUrl = URL.createObjectURL(previewFile);
-                        }
-
-                        validKitties.push({
-                            ...kittyData,
-                            sourceFile: name,
-                            preview_image: previewImageFile,
-                            previewImageUrl,
-                        });
-                    } else {
-                        invalidFiles += 1;
+            if (folderHandle) {
+                for await (const [name, handle] of folderHandle.entries()) {
+                    if (handle.kind !== "file") {
+                        continue;
                     }
-                } catch {
-                    invalidFiles += 1;
+
+                    const fileHandle = handle as FileSystemFileHandleLike;
+                    const file = await fileHandle.getFile();
+                    fileMap.set(name, file);
+                }
+            } else {
+                for (const file of selectedFiles) {
+                    fileMap.set(file.name, file);
                 }
             }
 
+            const { kitties: validKitties, invalidFiles } = await buildKittiesFromFileMap(fileMap);
             setKitties(validKitties);
             setLoadDone(true);
 
@@ -274,6 +351,14 @@ const KittyImport: React.FC = () => {
     return (
         <div className={styles["kitty-import"]}>
             <div className={styles["kitty-import-start"]}>
+                <input
+                    ref={filesInputRef}
+                    type="file"
+                    accept=".json,.png,application/json,image/png"
+                    multiple
+                    className={styles["files-input-hidden"]}
+                    onChange={onFilesSelected}
+                />
                 <div className={styles["folder-path"]}>
                     <label htmlFor="kitty-folder-path">Folder with kitty JSON + PNG files:</label>
                     <input
@@ -282,10 +367,10 @@ const KittyImport: React.FC = () => {
                         readOnly
                         onKeyDownCapture={(event) => event.stopPropagation()}
                         className={styles["folder-path-input"]}
-                        placeholder="Select folder with exported JSON and PNG files"
+                        placeholder="Select folder (or JSON + PNG files)"
                     />
                 </div>
-                <SoundButton onClick={chooseFolder}>CHOOSE FOLDER</SoundButton>
+                <SoundButton onClick={chooseFolder}>{supportsDirectoryPicker ? "CHOOSE FOLDER" : "CHOOSE FILES"}</SoundButton>
                 {canLoad && <SoundButton onClick={loadJsonKitties}>LOAD</SoundButton>}
                 {status && <div className={styles["kitty-import-status"]}>{status}</div>}
             </div>

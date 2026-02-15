@@ -17,6 +17,10 @@
         max-width: 800px;
     }
 
+    .files-input-hidden {
+        display: none;
+    }
+
     .folder-path {
         @include flex-center($ai: flex-start);
         flex-direction: column;

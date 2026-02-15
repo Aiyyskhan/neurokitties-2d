@@ -47,6 +47,37 @@ const dataUrlToBlob = async (dataUrl: string): Promise<Blob> => {
     return await response.blob();
 };
 
+const isUserCanceled = (error: unknown): boolean => {
+    const message = error instanceof Error ? error.message : String(error);
+    return message.toLowerCase().includes("abort");
+};
+
+const shouldUseDownloadFallback = (error: unknown): boolean => {
+    if (isUserCanceled(error)) {
+        return false;
+    }
+
+    const message = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+    const domName = error instanceof DOMException ? error.name : "";
+
+    return domName === "SecurityError"
+        || domName === "NotAllowedError"
+        || message.includes("cross origin")
+        || message.includes("showsavefilepicker");
+};
+
+const downloadBlob = (filename: string, blob: Blob): void => {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+};
+
 const KittyExport: FC<KittyExportProps> = ({ ref }) => {
     const kittyAvatarSnapshot = useRef<RefKittyAvatar | null>(null);
     const [savePath, setSavePath] = useState<string>("");
@@ -88,71 +119,63 @@ const KittyExport: FC<KittyExportProps> = ({ ref }) => {
             preview_image: pngFileName,
         };
         const jsonContent = JSON.stringify(exportPayload, null, 2);
+        const jsonBlob = new Blob([jsonContent], { type: "application/json" });
         const pngBlob = await dataUrlToBlob(snapshotBase64);
 
         try {
             const browserWindow = window as FileSystemWindow;
 
             if (browserWindow.showSaveFilePicker) {
-                const jsonHandle = await browserWindow.showSaveFilePicker({
-                    suggestedName: jsonFileName,
-                    types: [
-                        {
-                            description: "JSON",
-                            accept: {
-                                "application/json": [".json"],
+                try {
+                    const jsonHandle = await browserWindow.showSaveFilePicker({
+                        suggestedName: jsonFileName,
+                        types: [
+                            {
+                                description: "JSON",
+                                accept: {
+                                    "application/json": [".json"],
+                                },
                             },
-                        },
-                    ],
-                });
+                        ],
+                    });
 
-                const jsonWritable = await jsonHandle.createWritable();
-                await jsonWritable.write(jsonContent);
-                await jsonWritable.close();
+                    const jsonWritable = await jsonHandle.createWritable();
+                    await jsonWritable.write(jsonContent);
+                    await jsonWritable.close();
 
-                const pngHandle = await browserWindow.showSaveFilePicker({
-                    suggestedName: pngFileName,
-                    types: [
-                        {
-                            description: "PNG",
-                            accept: {
-                                "image/png": [".png"],
+                    const pngHandle = await browserWindow.showSaveFilePicker({
+                        suggestedName: pngFileName,
+                        types: [
+                            {
+                                description: "PNG",
+                                accept: {
+                                    "image/png": [".png"],
+                                },
                             },
-                        },
-                    ],
-                });
+                        ],
+                    });
 
-                const pngWritable = await pngHandle.createWritable();
-                await pngWritable.write(pngBlob);
-                await pngWritable.close();
+                    const pngWritable = await pngHandle.createWritable();
+                    await pngWritable.write(pngBlob);
+                    await pngWritable.close();
+                } catch (pickerError) {
+                    if (!shouldUseDownloadFallback(pickerError)) {
+                        throw pickerError;
+                    }
+
+                    downloadBlob(jsonFileName, jsonBlob);
+                    downloadBlob(pngFileName, pngBlob);
+                }
             } else {
-                const jsonBlob = new Blob([jsonContent], { type: "application/json" });
-                const jsonUrl = URL.createObjectURL(jsonBlob);
-                const jsonLink = document.createElement("a");
-
-                jsonLink.href = jsonUrl;
-                jsonLink.download = jsonFileName;
-                document.body.appendChild(jsonLink);
-                jsonLink.click();
-                document.body.removeChild(jsonLink);
-                URL.revokeObjectURL(jsonUrl);
-
-                const pngUrl = URL.createObjectURL(pngBlob);
-                const pngLink = document.createElement("a");
-
-                pngLink.href = pngUrl;
-                pngLink.download = pngFileName;
-                document.body.appendChild(pngLink);
-                pngLink.click();
-                document.body.removeChild(pngLink);
-                URL.revokeObjectURL(pngUrl);
+                downloadBlob(jsonFileName, jsonBlob);
+                downloadBlob(pngFileName, pngBlob);
             }
 
             setStatus("success");
             setStatusText("JSON and PNG files have been exported successfully.");
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
-            const userCanceled = message.toLowerCase().includes("abort");
+            const userCanceled = isUserCanceled(error);
 
             setStatus("error");
             setStatusText(userCanceled ? "Save operation was canceled." : `Failed to export JSON + PNG: ${message}`);
