@@ -1,31 +1,36 @@
 @use "@/assets/styles/global.scss" as *;
 
 .thanksPanel {
-    // padding: 1rem;
-    max-width: 100%;
-    // margin: 0 auto;
+    @include flex-center($jc: center, $ai: center);
+    flex-direction: column;
+    width: min(100%, 980px);
+    height: 100%;
+    min-height: 0;
+    margin: 0 auto;
+    padding: 0.25rem 0.75rem 0.75rem;
+    box-sizing: border-box;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-color: $color3 $color2;
     
     &__title {
         text-align: center;
         font-size: 2rem;
-        margin-bottom: 0.5rem;
+        margin-bottom: 2rem;
         color: $color3;
     }
 
     ul {
         list-style: disc;
-        padding: 0;
-        margin: 0;
+        width: fit-content;
+        max-width: min(100%, 920px);
+        padding-left: 1.2rem;
+        margin: 0 auto;
 
         li {
-            // display: flex;
-            // align-items: flex-start;
-            // gap: 1rem;
             margin-bottom: 0.2rem;
-            //   position: relative;
         
             &::marker {
-                // content: "o"; //"★";
                 color: $color3;
                 font-size: 1.2rem;
                 flex-shrink: 0;
@@ -40,16 +45,15 @@
     
         a {
             
-            text-decoration: none; //underline dotted;
+            text-decoration: none;
 
             .linkText {
                 color: $color3;
                 display: inline-block;
-                transition: transform 0.2s ease; //color 0.2s ease;
+                transition: transform 0.2s ease;
                 font-weight: bold;
 
                 &:hover {
-                    // color: #0055cc;
                     transform: scale(1.05);
                 }
             }

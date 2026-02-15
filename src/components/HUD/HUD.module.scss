@@ -53,6 +53,10 @@
         justify-content: end;
         gap: 1rem;
         padding-right: 1rem;
+        --offset-evo-exit: clamp(0.25rem, calc(#{$hud-height} * 0.24), 1.9rem);
+        --offset-nft-export: clamp(0.45rem, calc(#{$hud-height} * 0.34), 2.6rem);
+        --offset-start-pause: clamp(0.15rem, calc(#{$hud-height} * 0.11), 1rem);
+        --offset-manual: clamp(0.55rem, calc(#{$hud-height} * 0.4), 2.8rem);
 
         &-btn {
             box-sizing: content-box;
@@ -67,25 +71,25 @@
             // }
 
             &-evo {
-                margin-top: 35%; //calc($hud-height * 0.25);
+                margin-top: var(--offset-evo-exit);
             }
             &-nft {
-                margin-top: 57%;
+                margin-top: var(--offset-nft-export);
             }
             &-export {
-                margin-top: 57%;
+                margin-top: var(--offset-nft-export);
             }
             &-start {
-                margin-top: 18%;
+                margin-top: var(--offset-start-pause);
             }
             &-pause {
-                margin-top: 18%;
+                margin-top: var(--offset-start-pause);
             }
             &-manual {
-                margin-top: 60%;
+                margin-top: var(--offset-manual);
             }
             &-exit {
-                margin-top: 35%;
+                margin-top: var(--offset-evo-exit);
             }
             &-wallet {
                 @include flex-center();
@@ -94,5 +98,19 @@
             }
         }
     }    
+}
+
+@media (max-height: 740px) {
+    .hud-controls {
+        &-btn {
+            button {
+                height: 1.8rem;
+                min-height: 1.8rem;
+                line-height: 1.8rem;
+                font-size: 1.1rem;
+                padding: 0 0.6rem;
+            }
+        }
+    }
 }
   

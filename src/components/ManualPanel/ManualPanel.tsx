@@ -22,7 +22,7 @@ const ManualPanel: React.FC = () => {
                     </li><br />
 
                     <li>
-                        <h3>⚡ Quick Start</h3><br />
+                        <h3>Quick Start</h3><br />
                         <ol>
                             <li>Press <strong>PLAY</strong> to start an episode.</li>
                             <li>Select up to <strong>5 NeuroKitties</strong>.</li>

@@ -3,11 +3,17 @@
 .infoPanel {
     @include flex-center;
     flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    padding: 0.5rem;
+    box-sizing: border-box;
     
     p {
-        font-size: 2rem;
-        // font-weight: bold;
-        margin-bottom: 10px;
+        font-size: clamp(1.4rem, 2.2vw, 2rem);
+        margin: 0;
         color: $color3;
+        text-align: center;
+        max-width: 80ch;
     }
 }

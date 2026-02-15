@@ -111,7 +111,9 @@ const KittyImport: React.FC = () => {
     const [loadDone, setLoadDone] = useState<boolean>(false);
     const [status, setStatus] = useState<string>("");
     const [kitties, setKitties] = useState<ImportedKitty[]>([]);
+    const [selectedKittyKeys, setSelectedKittyKeys] = useState<Set<string>>(new Set());
     const filesInputRef = useRef<HTMLInputElement | null>(null);
+    const selectedGenomesByKittyKey = useRef<Map<string, Genome>>(new Map());
     useEffect(() => {
         return () => {
             kitties.forEach((kitty) => {
@@ -129,6 +131,17 @@ const KittyImport: React.FC = () => {
 
         return selectedFiles.length > 0;
     }, [folderHandle, folderPath, isFolderEmpty, selectedFiles]);
+
+    const clearSelectionsForCurrentList = () => {
+        selectedGenomesByKittyKey.current.forEach((genome) => {
+            const genomeIndex = POPULATION_GENOME.indexOf(genome);
+            if (genomeIndex >= 0) {
+                POPULATION_GENOME.splice(genomeIndex, 1);
+            }
+        });
+        selectedGenomesByKittyKey.current.clear();
+        setSelectedKittyKeys(new Set());
+    };
 
     const buildKittiesFromFileMap = async (fileMap: Map<string, File>): Promise<{ kitties: ImportedKitty[]; invalidFiles: number }> => {
         const validKitties: ImportedKitty[] = [];
@@ -189,6 +202,7 @@ const KittyImport: React.FC = () => {
 
     const onFilesSelected: React.ChangeEventHandler<HTMLInputElement> = (event) => {
         const files = Array.from(event.target.files ?? []);
+        clearSelectionsForCurrentList();
         setFolderHandle(null);
         setLoadDone(false);
         setKitties([]);
@@ -238,6 +252,7 @@ const KittyImport: React.FC = () => {
             setFolderPath(handle.name);
             setIsFolderEmpty(!hasAnyEntries);
             setStatus(hasAnyEntries ? "" : "Selected source is empty. Choose JSON + PNG files.");
+            clearSelectionsForCurrentList();
             setLoadDone(false);
             setKitties([]);
         } catch (error) {
@@ -300,14 +315,37 @@ const KittyImport: React.FC = () => {
         }
     };
 
-    const selectKitty = (idx: number) => {
+    const toggleKittySelection = (idx: number) => {
         const kitty = kitties[idx];
+        const kittyKey = `${kitty.sourceFile}-${idx}`;
+        const selectedGenome = selectedGenomesByKittyKey.current.get(kittyKey);
+
+        if (selectedGenome) {
+            const selectedGenomeIndex = POPULATION_GENOME.indexOf(selectedGenome);
+            if (selectedGenomeIndex >= 0) {
+                POPULATION_GENOME.splice(selectedGenomeIndex, 1);
+            }
+            selectedGenomesByKittyKey.current.delete(kittyKey);
+            setSelectedKittyKeys((prev) => {
+                const next = new Set(prev);
+                next.delete(kittyKey);
+                return next;
+            });
+            return;
+        }
+
         const genome = kitty.genome;
 
         const newGenome = new Genome(config.COLOR_COUNT, config.MATRICES_COUNT, config.NEURON_COUNT);
         newGenome.BRAIN = deepCloneArray(genome.BRAIN);
         newGenome.COLORS = deepCloneArray(genome.COLORS);
         POPULATION_GENOME.push(newGenome);
+        selectedGenomesByKittyKey.current.set(kittyKey, newGenome);
+        setSelectedKittyKeys((prev) => {
+            const next = new Set(prev);
+            next.add(kittyKey);
+            return next;
+        });
     };
 
     if (isLoading) {
@@ -333,7 +371,9 @@ const KittyImport: React.FC = () => {
                                     <div className={styles["kitty-preview-missing"]}>PNG preview not found</div>
                                 )}
                                 <div className={styles["kitty-selection-btn"]}>
-                                    <SoundButton onClick={() => selectKitty(index)}>SELECT</SoundButton>
+                                    <SoundButton onClick={() => toggleKittySelection(index)}>
+                                        {selectedKittyKeys.has(`${kitty.sourceFile}-${index}`) ? "UNSELECT" : "SELECT"}
+                                    </SoundButton>
                                 </div>
                             </div>
                             <div className={styles["kitty-card-right"]}>
@@ -385,7 +425,7 @@ const KittyImport: React.FC = () => {
                 >
                     CHOOSE FILES
                 </SoundButton>
-                {canLoad && <SoundButton onClick={loadJsonKitties}>IMPORT FILES</SoundButton>}
+                {canLoad && <SoundButton onClick={loadJsonKitties}>IMPORT</SoundButton>}
                 {status && <div className={styles["kitty-import-status"]}>{status}</div>}
             </div>
         </div>

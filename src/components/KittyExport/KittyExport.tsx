@@ -190,7 +190,7 @@ const KittyExport: FC<KittyExportProps> = ({ ref }) => {
 
     return (
         <div className={styles["export-panel"]}>
-            <div className={styles["export-title"]}>Export kitty files</div>
+            <div className={styles["export-title"]}>Export kitty</div>
 
             <div className={styles["export-data"]}>
                 <div className={styles["export-preview"]}>
@@ -220,12 +220,12 @@ const KittyExport: FC<KittyExportProps> = ({ ref }) => {
             </div>
 
             <div className={styles["export-hint"]}>
-                Exports two files: <code>.json</code> and <code>.png</code>.
+                Exports two files: .json and .png
             </div>
 
             <div className={styles["export-button"]}>
                 <SoundButton className={styles["save"]} onClick={exportJson} disabled={!pathIsValid || isExporting}>
-                    {isExporting ? "EXPORTING..." : "DOWNLOAD FILES"}
+                    {isExporting ? "EXPORTING..." : "DOWNLOAD"}
                 </SoundButton>
             </div>
 

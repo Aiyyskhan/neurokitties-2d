@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { FullMetadata, getNFTs } from "@/solana/nftManager";
 import { Genome, POPULATION_GENOME } from "@/neuroevolution/genomes";
@@ -14,6 +14,8 @@ const NFTgallery: React.FC = () => {
     const { connection } = useConnection();
     const [nfts, setNfts] = useState<FullMetadata[]>([]);
     const [nftsDone, setNftsDone] = useState<boolean>(false);
+    const [selectedNftIndexes, setSelectedNftIndexes] = useState<Set<number>>(new Set());
+    const selectedGenomesByNftIndex = useRef<Map<number, Genome>>(new Map());
 
     useEffect(() => {
         if (wallet.connected) {
@@ -33,7 +35,22 @@ const NFTgallery: React.FC = () => {
         }
     }, [wallet, connection]);
 
-    const selectNft = (idx: number) => {
+    const toggleNftSelection = (idx: number) => {
+        const selectedGenome = selectedGenomesByNftIndex.current.get(idx);
+        if (selectedGenome) {
+            const selectedGenomeIndex = POPULATION_GENOME.indexOf(selectedGenome);
+            if (selectedGenomeIndex >= 0) {
+                POPULATION_GENOME.splice(selectedGenomeIndex, 1);
+            }
+            selectedGenomesByNftIndex.current.delete(idx);
+            setSelectedNftIndexes((prev) => {
+                const next = new Set(prev);
+                next.delete(idx);
+                return next;
+            });
+            return;
+        }
+
         const nft = nfts[idx];
         console.log(`Idx: ${idx}`);
         console.log(`Name: ${nft.name}`);
@@ -61,6 +78,12 @@ const NFTgallery: React.FC = () => {
             // console.log(`COLORS: ${genome.COLORS} type: ${typeof genome.COLORS}`);
             
             POPULATION_GENOME.push(new_genome);
+            selectedGenomesByNftIndex.current.set(idx, new_genome);
+            setSelectedNftIndexes((prev) => {
+                const next = new Set(prev);
+                next.add(idx);
+                return next;
+            });
         }
     }
 
@@ -78,7 +101,9 @@ const NFTgallery: React.FC = () => {
                             <div className={styles["nft-card-left"]}>
                                 <img src={nft.image} alt={nft.name} />
                                 <div className={styles["nft-selection-btn"]}>
-                                    <SoundButton onClick={() => {selectNft(index)}}>SELECT</SoundButton>
+                                    <SoundButton onClick={() => {toggleNftSelection(index);}}>
+                                        {selectedNftIndexes.has(index) ? "UNSELECT" : "SELECT"}
+                                    </SoundButton>
                                 </div>
                             </div>
                             <div className={styles["nft-card-right"]}>
@@ -90,10 +115,10 @@ const NFTgallery: React.FC = () => {
                         ))}
                     </div>
                 ) : (
-                    <>
+                    <div className={styles["nft-gallery-loading"]}>
                     <h2 className={styles["nft-gallery-title"]}>your NFTs loading...</h2>
                     <Spinner />
-                    </>
+                    </div>
                 )
             }
         </div>

@@ -2,20 +2,25 @@
 
 .nft-gallery {
     @include flex-center;
-    width: 100%;
+    width: min(100%, 1050px);
     height: 100%;
+    min-height: 0;
+    margin: 0 auto;
     flex-direction: column;
-    // gap: 1rem;
-    overflow-y: auto; // Вертикальный скролл только при необходимости
-    overflow-x: hidden; // Убирает ненужный горизонтальный скролл
+    justify-content: flex-start;
+    padding: 0.25rem 0.5rem 0.5rem;
+    box-sizing: border-box;
+    overflow-y: auto;
+    overflow-x: hidden;
     scrollbar-color: $color3 $color2;
 
     .nft-gallery-grid {
-        max-height: 90%;
+        width: 100%;
+        max-height: 100%;
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         justify-content: center;
-        // align-content: center;
+        align-content: start;
         gap: 1rem;
 
         .nft-card {
@@ -29,7 +34,7 @@
             box-sizing: border-box;
 
             &-left {
-                flex: 0 0 calc(128px + $border-lw * 2); // фиксируем ширину в flex-строке
+                flex: 0 0 calc(128px + $border-lw * 2);
                 width: calc(128px + $border-lw * 2);
                 height: auto;
 
@@ -40,7 +45,6 @@
                 img {
                     display: block;
                     width: 100%;
-                    // height: 100%;
                     object-fit: contain;
                 }
 
@@ -90,5 +94,22 @@
     .nft-gallery-title {
         font-size: 2rem;
         font-weight: normal;
+        text-align: center;
+    }
+
+    .nft-gallery-loading {
+        @include flex-center;
+        flex-direction: column;
+        gap: 1rem;
+        width: 100%;
+        min-height: 100%;
+    }
+}
+
+@media (max-width: 960px) {
+    .nft-gallery {
+        .nft-gallery-grid {
+            grid-template-columns: 1fr;
+        }
     }
 }

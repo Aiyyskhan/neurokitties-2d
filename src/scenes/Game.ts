@@ -21,7 +21,7 @@ export default class GameScene extends Phaser.Scene {
     private kittyInfo!: Phaser.GameObjects.Text;
 
     private enableActivity: boolean = false;
-    private evolutionMode: boolean = false;
+    private modalInputLocked: boolean = false;
 
     private meow!: Phaser.Sound.BaseSound;
     
@@ -383,7 +383,7 @@ export default class GameScene extends Phaser.Scene {
 
             kitty.base.setInteractive({ useHandCursor: true, pixelPerfect: true })
             .on('pointerover', (): void => {
-                if (!this.evolutionMode) {
+                if (!this.modalInputLocked) {
                     // const totalSectors = this.checkpointsGroup ? this.checkpointsGroup.getLength() : 0;
                     const visited = kitty.progress.size;
                     // this.kittyInfo.setText(`# ${kitty.id} (${visited}/${totalSectors} sectors)`)
@@ -417,7 +417,7 @@ export default class GameScene extends Phaser.Scene {
                 this.kittyInfo.setVisible(false);
             })
             .on('pointerdown', (pointer: Phaser.Input.Pointer): void => {
-                if (!this.evolutionMode) {
+                if (!this.modalInputLocked) {
                     if (pointer.leftButtonDown()) {
                         if (config.GameData.KITTY_PROGRESS.size < 5) {
                             config.GameData.KITTY_PROGRESS.set(k.id, k.progress.size);
@@ -506,8 +506,8 @@ export default class GameScene extends Phaser.Scene {
         this.kitties.forEach((k) => { k.handlePause(pause_state); });
     }
 
-    handleEvolutionMode(evoMode: boolean): void {
-        this.evolutionMode = evoMode;
+    handleModalInputLock(locked: boolean): void {
+        this.modalInputLocked = locked;
     }
 
     exit() {

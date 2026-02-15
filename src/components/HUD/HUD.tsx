@@ -82,6 +82,25 @@ const HUD: React.FC<HUDProps> = ({ ref }) => {
         }
     }, [bg_music, ref]);
 
+    useEffect(() => {
+        const modalOpenInHud = (isPaused && panelState !== 'HIDE') || manualShow || exitPanelShow;
+        if (ref.current) {
+            const scene = ref.current.scene as GameScene;
+            if (scene && scene.scene.key === 'GameScene') {
+                scene.handleModalInputLock(modalOpenInHud);
+            }
+        }
+
+        return () => {
+            if (ref.current) {
+                const scene = ref.current.scene as GameScene;
+                if (scene && scene.scene.key === 'GameScene') {
+                    scene.handleModalInputLock(false);
+                }
+            }
+        };
+    }, [isPaused, panelState, manualShow, exitPanelShow, ref]);
+
     const handlePauseToggle = () => {
         setIsPaused((prev) => !prev);
         if (ref.current) {
@@ -98,11 +117,9 @@ const HUD: React.FC<HUDProps> = ({ ref }) => {
             if (scene && scene.scene.key === 'GameScene') {
                 if (panelState === 'EVO') {
                     setPanelState('HIDE');
-                    scene.handleEvolutionMode(false);
                 } else {
                     if (selectedKitties && selectedKitties.length > 0) {
                         setPanelState('EVO');
-                        scene.handleEvolutionMode(true);
                     } else {
                         const info = "No selected kitties";
                         console.log(info);

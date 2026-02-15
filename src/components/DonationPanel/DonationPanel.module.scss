@@ -3,8 +3,18 @@
 .donationPanel {
     @include flex-center;
     flex-direction: column;
-    gap: 20px;
-    padding: 20px;
+    justify-content: center;
+    gap: 1rem;
+    width: min(100%, 820px);
+    height: 100%;
+    min-height: 0;
+    margin: 0 auto;
+    padding: 0.5rem 0.75rem 0.75rem;
+    box-sizing: border-box;
+    text-align: center;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-color: $color3 $color2;
     
     &__title {
         font-size: 2rem;
@@ -23,12 +33,11 @@
     &__address {
         font-size: 1.2rem;
         font-weight: normal;
-        // margin-bottom: 20px;
         color: $color3;
+        word-break: break-word;
     }
 
     &__input {
-        // margin-bottom: 20px;
         padding: 0.2rem;
         border: none;
         background-color: $color1;
@@ -41,13 +50,13 @@
         pointer-events: auto;
         user-select: text;
         overflow: auto;
-
-        // scrollbar-color: $color3 $color1;
+        min-width: 180px;
+        max-width: 260px;
+        text-align: center;
 
         &:focus {
             outline: none;
             border: none;
-            // border: $color3 $border-lw solid;
         }
     }
     
