@@ -17,6 +17,9 @@
 <p>
     Each NeuroKitty has its own neural network (brain), which evolves by transferring information from a selected leader to a recipient. If multiple leaders are selected, knowledge is shared between them; otherwise, it is passed to a NeuroKitty from the population.
 </p>
+<p>
+    NeuroKitties can also be minted as NFTs on the Solana blockchain. By connecting a compatible wallet, you can mint a specific NeuroKitty as a unique on-chain asset, preserving its evolutionary progress. Once minted, the NFT is stored in your wallet and can be transferred or traded like any other digital asset on Solana.
+</p>
 
 <h2>🚀 How to Run from Source</h2>
 
