@@ -9,7 +9,7 @@
 
 
 <h2>
-🐱 Evolve your NeuroKitties and preserve them as NFTs!
+🐱 Guide evolution. Select leaders. Mint as NFTs!
 </h2>
 
 <p>
